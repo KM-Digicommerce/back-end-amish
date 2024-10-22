@@ -22,10 +22,10 @@ class products(Document):
     tags = fields.StringField()
     product_type_id = fields.ReferenceField(product_type)
     Tags = fields.StringField()
-    productName = fields.StringField()
+    product_name = fields.StringField()
     Handle = fields.StringField()
     Description  = fields.StringField()
-    BasePrice = fields.IntField() #price in $
+    BasePrice = fields.StringField() #price in $
     ImageURL = fields.StringField()
     Key_features = fields.StringField()
 class leaf_option(EmbeddedDocument):

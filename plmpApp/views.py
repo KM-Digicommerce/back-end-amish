@@ -225,7 +225,7 @@ def obtainAllProductList(request):
             "_id":None,
             'product_list': {
                 "$push": {
-                    'product_name': "$productName",
+                    'product_name': "$product_name",
                     'product_id': "$_id",
                     'url':"$ImageURL",
                     "ManufacturerName":"$ManufacturerName",
@@ -305,7 +305,7 @@ def upload_file(request):
             if category_obj== None:
                 category_obj = DatabaseModel.save_documents(category,{'name':category_list[0],'section_list':[section_obj.id]})
             if product_obj == None:
-                product_obj = DatabaseModel.save_documents(products,{'productName':Title,"Handle":Handle,"product_type_id":product_type_obj.id,"ManufacturerName":Vendor,"tags":Tags,"Key_features":KeyFeatures,"ImageURL":[product_image]})
+                product_obj = DatabaseModel.save_documents(products,{'product_name':Title,"Handle":Handle,"product_type_id":product_type_obj.id,"ManufacturerName":Vendor,"tags":Tags,"Key_features":KeyFeatures,"ImageURL":[product_image]})
         else:
             if isinstance(product_image, str):
                 DatabaseModel.update_documents(products.objects,{"id":product_obj.id},{"push__ImageURL":product_image})
@@ -349,9 +349,9 @@ def obtainProductDetails(request):
             "_id":None,
             'product_obj': {
                 "$first": {
-                    'product_name': "$productName",
+                    'product_name': "$product_name",
                     'product_id': "$_id",
-                    'url':"$ImageURL",
+                    'ImageURL':"$ImageURL",
                     "ManufacturerName":"$ManufacturerName",
                     "tags":"$tags",
                     "BasePrice":"$BasePrice",
@@ -377,6 +377,7 @@ def productBulkUpdate(request):
     data['is_updated'] = True
     return data
 
+@csrf_exempt
 def productUpdate(request):
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
@@ -533,10 +534,10 @@ def exportAll(request):
                 "Variant Price": { "$first": "$finished_price" },
                 "Image Src": { "$first": "$ImageURL" },
                 "Handle": { "$first": "$product_ins.Handle" },
-                "Title": { "$first": "$product_ins.productName" },
+                "Title": { "$first": "$product_ins.product_name" },
                 "Vendor": { "$first": "$product_ins.ManufacturerName" },
                 "Tags": { "$first": "$product_ins.tags" },
-                "Key Features": { "$first": "$product_ins.Key_features" },
+                "Key_features": { "$first": "$product_ins.Key_features" },
                 "Product Category": {
             "$first": {
                 "$concat": [
@@ -567,7 +568,7 @@ def exportAll(request):
                 "Title": 1,
                 "Vendor": 1,
                 "Tags": 1,
-                "Key Features": 1,
+                "Key_features": 1,
                 "options":1,
                 "Product Category":1
             }
@@ -579,7 +580,7 @@ def exportAll(request):
     worksheet.title = "Products"
 
     headers = [
-        "S.No","Handle", "Title","Vendor", "Tags", "Product Category", "Key Features","Variant SKU", "Variant Price", "Image Src", "Options"
+        "S.No","Handle", "Title","Vendor", "Tags", "Product Category", "Key_features","Variant SKU", "Variant Price", "Image Src", "Options"
     ]
     worksheet.append(headers)
 
@@ -596,7 +597,7 @@ def exportAll(request):
             item["Vendor"], 
             item["Tags"], 
             item["Product Category"], 
-            item["Key Features"], 
+            item["Key_features"], 
             item["Variant SKU"], 
             item["Variant Price"], 
             item["Image Src"], 

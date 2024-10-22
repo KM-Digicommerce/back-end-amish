@@ -27,17 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1
 
-# Other Django settings...
 
-MONGODB_COURSE_DB_NAME = os.getenv('MONGODB_COURSE_DB_NAME')
-MONGODB_HOST_1 = os.getenv('MONGODB_HOST_1')
 
-# Connect to MongoDB
 from mongoengine import connect
 
 connect(
@@ -98,7 +92,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'plmp_backend.wsgi.application'
 
+CORS_ALLOW_ALL_ORIGINS = False
 
+# Allow specific origins
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://192.168.162.72:3000"
+]
+
+# If you're using CSRF protection, add this as well
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://192.168.162.72:3000"
+]
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
