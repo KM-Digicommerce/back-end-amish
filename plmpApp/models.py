@@ -1,7 +1,7 @@
 from mongoengine import Document , fields,EmbeddedDocument
 
 class User(Document):
-    username = fields.StringField(required=True)
+    user_name = fields.StringField(required=True)
     email = fields.StringField(required=True)
     age = fields.IntField()
 
@@ -18,7 +18,7 @@ class Stain(Document):
     name = fields.StringField()
 
 class products(Document):
-    ManufacturerName = fields.StringField()
+    Manufacturer_name = fields.StringField()
     tags = fields.StringField()
     product_type_id = fields.ReferenceField(product_type)
     Tags = fields.StringField()
@@ -49,8 +49,7 @@ class varient_option(Document):
 class Variants(Document):
     product_id = fields.ReferenceField(products)
     size =  fields.StringField()
-    options = fields.ReferenceField(varient_option)
-    leafOptions = fields.ListField(fields.EmbeddedDocumentField(leaf_option))
+    options = fields.ListField(fields.ReferenceField(varient_option))
     name = fields.StringField()
     Stain_id = fields.ReferenceField(Stain)
     varient_sku  =  fields.StringField()

@@ -26,14 +26,9 @@ SECRET_KEY = 'django-insecure-)1p(h4i8wd0jham0iwr2o0c_^z8sj&2f+w&7gzj8jf&ug3j1&k
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-import os
 
 from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1
-
-
-
 from mongoengine import connect
-
 connect(
     db=MONGODB_COURSE_DB_NAME,
     host=MONGODB_HOST_1
@@ -94,13 +89,11 @@ WSGI_APPLICATION = 'plmp_backend.wsgi.application'
 
 CORS_ALLOW_ALL_ORIGINS = False
 
-# Allow specific origins
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.162.72:3000"
 ]
 
-# If you're using CSRF protection, add this as well
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.162.72:3000"

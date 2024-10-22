@@ -228,7 +228,7 @@ def obtainAllProductList(request):
                     'product_name': "$product_name",
                     'product_id': "$_id",
                     'url':"$ImageURL",
-                    "ManufacturerName":"$ManufacturerName",
+                    "Manufacturer_name":"$Manufacturer_name",
                     "tags":"$tags",
                     "BasePrice":"$BasePrice",
                     "Key_features":"$Key_features"
@@ -305,7 +305,7 @@ def upload_file(request):
             if category_obj== None:
                 category_obj = DatabaseModel.save_documents(category,{'name':category_list[0],'section_list':[section_obj.id]})
             if product_obj == None:
-                product_obj = DatabaseModel.save_documents(products,{'product_name':Title,"Handle":Handle,"product_type_id":product_type_obj.id,"ManufacturerName":Vendor,"tags":Tags,"Key_features":KeyFeatures,"ImageURL":[product_image]})
+                product_obj = DatabaseModel.save_documents(products,{'product_name':Title,"Handle":Handle,"product_type_id":product_type_obj.id,"Manufacturer_name":Vendor,"tags":Tags,"Key_features":KeyFeatures,"ImageURL":[product_image]})
         else:
             if isinstance(product_image, str):
                 DatabaseModel.update_documents(products.objects,{"id":product_obj.id},{"push__ImageURL":product_image})
@@ -352,7 +352,7 @@ def obtainProductDetails(request):
                     'product_name': "$product_name",
                     'product_id': "$_id",
                     'ImageURL':"$ImageURL",
-                    "ManufacturerName":"$ManufacturerName",
+                    "Manufacturer_name":"$Manufacturer_name",
                     "tags":"$tags",
                     "BasePrice":"$BasePrice",
                     "Key_features":"$Key_features"
@@ -535,7 +535,7 @@ def exportAll(request):
                 "Image Src": { "$first": "$ImageURL" },
                 "Handle": { "$first": "$product_ins.Handle" },
                 "Title": { "$first": "$product_ins.product_name" },
-                "Vendor": { "$first": "$product_ins.ManufacturerName" },
+                "Vendor": { "$first": "$product_ins.Manufacturer_name" },
                 "Tags": { "$first": "$product_ins.tags" },
                 "Key_features": { "$first": "$product_ins.Key_features" },
                 "Product Category": {
