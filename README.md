@@ -1,1 +1,3 @@
-# back-end-amish
+# PLMP () Backend
+
+This repository contains the backend of the **PLMP
