@@ -4,19 +4,19 @@ Overview
 PLMP is a backend application designed to facilitate product management for businesses. This project provides RESTful APIs for managing products, orders, and users, streamlining the e-commerce experience. Built using Django and MongoEngine, it leverages the power of a NoSQL database to efficiently handle diverse product data.
 Features
 
-**    User authentication and authorization
-    Product management (CRUD operations)
-    Order processing and tracking
-    Role-based access control
-    RESTful API design
-    Integration with Shopify platform**
+User authentication and authorization
+Product management (CRUD operations)
+Order processing and tracking
+Role-based access control
+RESTful API design
+Integration with Shopify platform
 
 Technologies Used
 
-   ** Django: A high-level Python web framework.
-    MongoEngine: An Object-Document Mapper (ODM) for working with MongoDB in Python.
-    JWT: JSON Web Token for authentication.
-    dotenv: For environment variable management.**
+Django: A high-level Python web framework.
+MongoEngine: An Object-Document Mapper (ODM) for working with MongoDB in Python.
+JWT: JSON Web Token for authentication.
+dotenv: For environment variable management.
 
 Getting Started
 Prerequisites
