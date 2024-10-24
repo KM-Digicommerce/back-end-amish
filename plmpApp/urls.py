@@ -1,7 +1,7 @@
 
 
 from django.urls import path
-from .views import v1, create_user,createCategory,createSection, createProductType, deleteCategory, deleteSection, deleteProductType, updateCategory, updateSection, updateProductType, obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll
+from .views import v1, create_user,createCategory,createSection, createProductType, deleteCategory, deleteSection, deleteProductType, updateCategory, updateSection, updateProductType, obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate
 
 
 urlpatterns = [
@@ -24,4 +24,6 @@ urlpatterns = [
     path('productUpdate/', productUpdate, name='productUpdate'), 
     path('obtainAllVarientList/', obtainAllVarientList, name='obtainAllVarientList'), 
     path('exportAll/', exportAll, name='exportAll'), 
+    path('retrieveData/', retrieveData, name='retrieveData'),
+    path('varientBulkUpdate/', varientBulkUpdate, name='varientBulkUpdate'),
 ]

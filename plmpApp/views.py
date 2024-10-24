@@ -214,11 +214,15 @@ def obtainCategoryAndSections(request):
 
 @csrf_exempt
 def obtainAllProductList(request):
-    json_req = JSONParser().parse(request)
-    product_type_id = ObjectId(json_req['id'])
+    # json_req = JSONParser().parse(request)
+    product_type_id = request.POST.get("id")
+    if product_type_id:
+        product_type_id = {'product_type_id':ObjectId(product_type_id)}
+    else:
+        product_type_id = {}
     pipeline = [
     {
-            "$match":{'product_type_id':product_type_id}
+            "$match":product_type_id
         },
     {
         '$group': {
@@ -366,6 +370,7 @@ def obtainProductDetails(request):
         result = result[0]
         del result['_id']
         result['product_obj']['product_id'] = str(result['product_obj']['product_id'])
+        result['product_obj']['ImageURL'] = result['product_obj']['ImageURL'][0] if len(result['product_obj']['ImageURL']) >0 else ""
     return  result
 
 def productBulkUpdate(request):
@@ -382,6 +387,16 @@ def productUpdate(request):
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
     DatabaseModel.update_documents(products.objects,{'id':product_id},json_req['update_obj'])
+    data = dict()
+    data['is_updated'] = True
+    return data
+
+@csrf_exempt
+def varientBulkUpdate(request):
+    json_req = JSONParser().parse(request)
+    varient_obj_list = json_req['varient_obj_list']
+    for i in varient_obj_list:
+        DatabaseModel.update_documents(Variants.objects,{'id':i['id']},i['update_obj'])
     data = dict()
     data['is_updated'] = True
     return data
@@ -616,3 +631,57 @@ def exportAll(request):
     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
     
     return response
+
+import pandas as pd
+import pdfplumber
+import pandas as pd
+
+@csrf_exempt
+def retrieveData(request):
+    data = dict()
+    data['status'] = False
+    if 'file' not in request.FILES:
+        return data
+    file = request.FILES['file']
+    try:
+        if file.name.endswith('.xlsx'):
+            sheets_dict = pd.read_excel(file, sheet_name=None)
+
+            # Create a dictionary to hold the JSON data for each sheet
+            all_sheets_json = {}
+
+            # Iterate through the sheets and convert each to JSON
+            for sheet_name, df in sheets_dict.items():
+                # Convert DataFrame to JSON
+                json_data = df.to_json(orient='records')
+                
+                # Store the JSON data for the current sheet
+                all_sheets_json[sheet_name] = json_data
+
+            # Print or save the JSON data for all sheets
+            print(all_sheets_json)
+            with open('sheets_output.json', 'w') as json_file:
+                json.dump(all_sheets_json, json_file)
+        elif file.name.endswith('.csv'):
+            df = pd.read_csv(file)
+
+            json_data = df.to_json(orient='records')
+
+            print(json_data)
+        elif file.name.endswith('.txt'):
+            df = pd.read_csv(file, sep='\t') 
+
+            json_data = df.to_json(orient='records')
+
+            print(json_data)
+        elif file.name.endswith('.pdf'):
+            with pdfplumber.open(file) as pdf:
+                all_text = ""
+                for page in pdf.pages:
+                    all_text += page.extract_text()
+            print(all_text)
+        else:
+            return data
+    except Exception as e:
+        print(">>>",e)
+        return data
