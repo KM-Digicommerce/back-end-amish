@@ -87,16 +87,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'plmp_backend.wsgi.application'
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://192.168.162.72:3000"
+    "http://192.168.162.13:3000"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "http://192.168.162.72:3000"
+    "http://192.168.162.13:3000"
 ]
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

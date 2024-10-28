@@ -4,9 +4,14 @@ from .models import category
 from .models import products
 from .models import product_type
 from .models import wood_type
+from .models import section
 from .models import Variants
 from .models import varient_option
-from .models import section
+from .models import level_one_category
+from .models import level_two_category
+from .models import level_three_category
+from .models import level_four_category
+from .models import level_five_category
 from .models import size_option
 from django.http import HttpResponse
 from openpyxl import Workbook
@@ -44,29 +49,59 @@ def createCategory(request):
     data['is_created'] = True
     return data
 
-
 @csrf_exempt
-def createSection(request):
+def createCategory1(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_id = json_req.get("category_id")
-    section_obj = DatabaseModel.save_documents(section,{'name':name})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'add_to_set__section_list':section_obj.id})
+    level_one_categoryn_obj = DatabaseModel.save_documents(level_one_category,{'name':name})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'add_to_set__level_one_category_list':level_one_categoryn_obj.id})
+    data = dict()
+    data['is_created'] = True
+    return data
+@csrf_exempt
+def createCategory2(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    category_id = json_req.get("category_id")
+    section_obj = DatabaseModel.save_documents(level_two_category,{'name':name})
+    DatabaseModel.update_documents(level_one_category.objects,{"id":category_id},{'add_to_set__level_two_category_list':section_obj.id})
     data = dict()
     data['is_created'] = True
     return data
 
 
 @csrf_exempt
-def createProductType(request):
+def createCategory3(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
-    section_id = json_req.get("section_id")
-    product_type_obj = DatabaseModel.save_documents(product_type,{'name':name})
-    DatabaseModel.update_documents(section.objects,{"id":section_id},{'add_to_set__product_type_list':product_type_obj.id})
+    section_id = json_req.get("category_id")
+    product_type_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
+    DatabaseModel.update_documents(level_two_category.objects,{"id":section_id},{'add_to_set__level_three_category_list':product_type_obj.id})
     data = dict()
     data['is_created'] = True
     return data
+@csrf_exempt
+def createCategory4(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    section_id = json_req.get("category_id")
+    product_type_obj = DatabaseModel.save_documents(level_four_category,{'name':name})
+    DatabaseModel.update_documents(level_three_category.objects,{"id":section_id},{'add_to_set__level_four_category_list':product_type_obj.id})
+    data = dict()
+    data['is_created'] = True
+    return data
+@csrf_exempt
+def createCategory5(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    section_id = json_req.get("category_id")
+    product_type_obj = DatabaseModel.save_documents(level_five_category,{'name':name})
+    DatabaseModel.update_documents(level_four_category.objects,{"id":section_id},{'add_to_set__level_five_category_list':product_type_obj.id})
+    data = dict()
+    data['is_created'] = True
+    return data
+
 
 #delete
 @csrf_exempt
@@ -78,22 +113,57 @@ def deleteCategory(request):
     data['is_deleted'] = True
     return data
 
-
 @csrf_exempt
-def deleteSection(request):
+def deleteCategory1(request):
     json_req = JSONParser().parse(request)
     id = json_req.get("id")
-    DatabaseModel.delete_documents(section,{'id':id})
+    category_id = json_req.get("category_id")
+    DatabaseModel.delete_documents(level_one_category,{'id':id})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_one_category_list':id})
     data = dict()
     data['is_deleted'] = True
     return data
 
-
 @csrf_exempt
-def deleteProductType(request):
+def deleteCategory2(request):
     json_req = JSONParser().parse(request)
     id = json_req.get("id")
-    DatabaseModel.delete_documents(product_type,{'id':id})
+    category_id = json_req.get("category_id")
+    DatabaseModel.delete_documents(level_two_category,{'id':id})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_two_category_list':id})
+    data = dict()
+    data['is_deleted'] = True
+    return data
+
+@csrf_exempt
+def deleteCategory3(request):
+    json_req = JSONParser().parse(request)
+    id = json_req.get("id")
+    category_id = json_req.get("category_id")
+    DatabaseModel.delete_documents(level_three_category,{'id':id})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_three_category_list':id})
+    data = dict()
+    data['is_deleted'] = True
+    return data
+
+@csrf_exempt
+def deleteCategory4(request):
+    json_req = JSONParser().parse(request)
+    id = json_req.get("id")
+    category_id = json_req.get("category_id")
+    DatabaseModel.delete_documents(level_four_category,{'id':id})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_four_category_list':id})
+    data = dict()
+    data['is_deleted'] = True
+    return data
+
+@csrf_exempt
+def deleteCategory5(request):
+    json_req = JSONParser().parse(request)
+    id = json_req.get("id")
+    category_id = json_req.get("category_id")
+    DatabaseModel.delete_documents(level_five_category,{'id':id})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_five_category_list':id})
     data = dict()
     data['is_deleted'] = True
     return data
@@ -104,111 +174,148 @@ def updateCategory(request):
     json_req = JSONParser().parse(request)
     id = json_req.get("id")
     name = json_req.get("name")
-    DatabaseModel.update_documents(category,{'id':id},{'name':name})
+    category_name = json_req.get("category_name")
+    if category_name == "level-1":
+        DatabaseModel.update_documents(category.objects,{'id':id},{'name':name})
+    elif category_name == "level-2":
+        DatabaseModel.update_documents(level_one_category.objects,{'id':id},{'name':name})
+    elif category_name == "level-3":
+        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+    elif category_name == "level-4":
+        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+    elif category_name == "level-5":
+        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+    elif category_name == "level-6":
+        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
     data = dict()
     data['is_updated'] = True
     return data
 
+def convert_object_ids_to_strings(data):
+    if isinstance(data, list):
+        for item in data:
+            convert_object_ids_to_strings(item)
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            if key == '_id' and isinstance(value, ObjectId):
+                data[key] = str(value)
+            else:
+                convert_object_ids_to_strings(value)
 
-@csrf_exempt
-def updateSection(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    name = json_req.get("name")
-    DatabaseModel.update_documents(section,{'id':id},{'name':name})
-    data = dict()
-    data['is_updated'] = True
-    return data
-
-
-@csrf_exempt
-def updateProductType(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    name = json_req.get("name")
-    DatabaseModel.update_documents(product_type,{'id':id},{'name':name})
-    data = dict()
-    data['is_updated'] = True
-    return data
 
 def obtainCategoryAndSections(request):
-    
+
     pipeline = [
     {
         '$lookup': {
-            "from": 'section',
-            "localField": 'section_list',
-            "foreignField": "_id",
-            "as": "section_ins"
-        }
-    },  {
-        '$unwind': {
-            'path': '$section_ins',
-            'preserveNullAndEmptyArrays': True
+            'from': 'level_one_category',
+            'localField': 'level_one_category_list',
+            'foreignField': '_id',
+            'as': 'level_one_category'
         }
     },
     {
         '$lookup': {
-            "from": 'product_type',
-            "localField": 'section_ins.product_type_list',
-            "foreignField": "_id",
-            "as": "product_type_ins"
+            'from': 'level_two_category',
+            'localField': 'level_one_category.level_two_category_list',
+            'foreignField': '_id',
+            'as': 'level_two_category'
         }
-    }, {
-        '$unwind': {
-            'path': '$product_type_ins',
-            'preserveNullAndEmptyArrays': True
+    },
+    {   
+        '$lookup': {
+            'from': 'level_three_category',
+            'localField': 'level_two_category.level_three_category_list',
+            'foreignField': '_id',
+            'as': 'level_three_category'
         }
     },
     {
-        '$group': {
-            "_id": {
-                'category_id': "$_id", 
-                "name":"$name",
-                'section_name': "$section_ins.name",
-                'section_id': "$section_ins._id"
-            },
-            'product_type_list': {
-                "$push": {
-                    'name': "$product_type_ins.name",
-                    'id': "$product_type_ins._id"
-                }
-            }
+        '$lookup': {
+            'from': 'level_four_category',
+            'localField': 'level_three_category.level_four_category_list',
+            'foreignField': '_id',
+            'as': 'level_four_category'
         }
     },
     {
-        '$group': {
-            "_id": "$_id.category_id",
-            "name":{'$first':"$_id.name"},
-            'sections': {
-                "$push": {
-                    'section_name': "$_id.section_name",
-                    'section_id': "$_id.section_id",
-                    'product_types': "$product_type_list"
-                }
-            }
-        }
-    },
-    {
-        '$project': {
-            'category_id':"$_id",
-            'name': "$name",
-            'sections': 1  ,
-            "_id":0
+        '$lookup': {
+            'from': 'level_five_category',
+            'localField': 'level_four_category.level_five_category_list',
+            'foreignField': '_id',
+            'as': 'level_five_category'
         }
     }
-    ]
-    result = list(category.objects.aggregate(*pipeline))
-    result = sorted(result, key=lambda x: x['category_id'])
-    for i in result:
-        if 'category_id':
-            i['category_id'] = str(i['category_id']) 
-            for j in i['sections']:
-                if 'section_id'in j :
-                    j['section_id'] = str(j['section_id']) 
-                    for k in j['product_types']:
-                        if 'id'in k:
-                            k['id'] = str(k['id']) 
+]
+
+    flat_result = list(category.objects.aggregate(*pipeline))
+    transformed_result = [] 
+
+    for entry in flat_result:  
+        category_entry = {
+            "_id": entry['_id'],
+            "name": entry['name'],
+            "level_one_category_list": []  
+        }
+
+        level_two_map = {level_two['_id']: level_two for level_two in entry.get('level_two_category', [])}
+
+        for level_one in entry.get('level_one_category', []):
+            level_one_entry = {
+                "_id": level_one['_id'],
+                "name": level_one['name'],
+                "level_two_category_list": []  
+            }
+            for level_two_id in level_one.get('level_two_category_list', []):
+                level_two = level_two_map.get(level_two_id)
+                if level_two:
+                    level_two_entry = {
+                        "_id": level_two['_id'],
+                        "name": level_two['name'],
+                        "level_three_category_list": []
+                    }
+                    level_three_map = {level_three['_id']: level_three for level_three in entry.get('level_three_category', [])}
+
+                    for level_three_id in level_two.get('level_three_category_list', []):
+                        level_three = level_three_map.get(level_three_id)
+                        if level_three:
+                            level_three_entry = {
+                                "_id": level_three['_id'],
+                                "name": level_three['name'],
+                                "level_four_category_list": [] 
+                            }
+                            level_four_map = {level_four['_id']: level_four for level_four in entry.get('level_four_category', [])}
+
+                            for level_four_id in level_three.get('level_four_category_list', []):
+                                level_four = level_four_map.get(level_four_id)
+                                if level_four:
+                                    level_four_entry = {
+                                        "_id": level_four['_id'],
+                                        "name": level_four['name'],
+                                        "level_five_category_list": [] 
+                                    }
+                                    level_five_map = {level_five['_id']: level_five for level_five in entry.get('level_five_category', [])}
+
+                                    for level_five_id in level_four.get('level_five_category_list', []):
+                                        level_five = level_five_map.get(level_five_id)
+                                        if level_five:
+                                            level_five_entry = {
+                                                "_id": level_five['_id'],
+                                                "name": level_five['name']
+                                            }
+                                            level_four_entry['level_five_category_list'].append(level_five_entry) 
+                                    level_three_entry['level_four_category_list'].append(level_four_entry) 
+                            level_two_entry['level_three_category_list'].append(level_three_entry) 
+                    level_one_entry['level_two_category_list'].append(level_two_entry) 
+
+            category_entry['level_one_category_list'].append(level_one_entry) 
+
+        transformed_result.append(category_entry) 
+
+    result = sorted(transformed_result, key=lambda x: x['_id'])
+
+
+    convert_object_ids_to_strings(result)  
     return result
 
 
