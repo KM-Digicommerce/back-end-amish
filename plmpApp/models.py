@@ -45,17 +45,21 @@ class varient_option(Document):
     option_name_id = fields.ReferenceField(type_name)
     option_value_id_list = fields.ListField(fields.ReferenceField(type_value),default = [])
 
+class product_varient_option(Document):
+    option_name_id = fields.ReferenceField(type_name)
+    option_value_id = fields.ReferenceField(type_value)
+
 class product_varient(Document):
     sku_number = fields.StringField(required=True)
-    varient_option_id = fields.ListField(fields.ReferenceField(varient_option))
+    varient_option_id = fields.ListField(fields.ReferenceField(product_varient_option))
     image_url = fields.ListField(fields.StringField())
-    finished_price = fields.FloatField(default=0.0)     
-    un_finished_price = fields.FloatField(default=0.0) 
+    finished_price = fields.FloatField(default=0.0)
+    un_finished_price = fields.FloatField(default=0.0)
     quantity = fields.FloatField()
 
 class products(Document):
     model = fields.StringField()
-    mpn = fields.StringField(required=True)
+    # mpn = fields.StringField(required=True)
     upc_ean = fields.StringField()
     breadcrumb = fields.StringField()
     brand_name = fields.StringField(required=True)
@@ -66,8 +70,7 @@ class products(Document):
     attributes = fields.DictField(default={})
     tags = fields.ListField(fields.StringField())
     msrp = fields.FloatField(default=0.0)
-    base_price = fields.FloatField(default=0.0)     
-    category_level_id = fields.StringField()
+    base_price = fields.FloatField(default=0.0)
     Key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
 

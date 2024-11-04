@@ -11,6 +11,8 @@ from .models import level_three_category
 from .models import level_four_category
 from .models import level_five_category
 from .models import product_category_config
+from .models import product_varient_option
+from .models import product_varient
 from .models import category_varient
 from .models import type_name
 from .models import type_value
@@ -32,7 +34,6 @@ def create_user(request):
     json_request = json.loads(request.body)
     categories_data = json_request.get('categories')
 
-    category_objects = []
     for category_data in categories_data:
         name = category_data.get('name')
         if name:
@@ -77,7 +78,6 @@ def createCategory3(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     section_id = json_req.get("category_id")
-    print(name, section_id )
     product_type_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
     DatabaseModel.update_documents(level_two_category.objects,{"id":section_id},{'add_to_set__level_three_category_list':product_type_obj.id})
     data = dict()
@@ -108,10 +108,52 @@ def createCategory5(request):
 @csrf_exempt
 def createProduct(request):
     json_req = JSONParser().parse(request)
-    name = json_req.get("name")
+    product_obj = json_req.get("product_obj")
     category_id = json_req.get("category_id")
     category_name = json_req.get("category_name")
-    products_obj = DatabaseModel.save_documents(products,{'product_name':name})
+    product_obj_save = {
+        "model" :product_obj['model'],
+        "upc_ean" :product_obj['upc_ean'],
+        "breadcrumb":product_obj['breadcrumb'],
+        "breadcrumb":product_obj['breadcrumb'],
+        "product_name":product_obj['product_name'],
+        "long_description":product_obj['long_description'],
+        "short_description":product_obj['short_description'],
+        "features":product_obj['features'],
+        "attributes":product_obj['attributes'],
+        "tags":product_obj['tags'],
+        "msrp":product_obj['msrp'],
+        "base_price":product_obj['base_price'],
+        "Key_features":product_obj['Key_features'],
+        "varients":[{  
+        "sku_number":"",
+        "finished_price":"",
+        "un_finished_price":"",
+        "quantity":"",
+        "options":[
+            {
+                'option_name_id':"",
+                "option_value_id":""
+            },
+             {
+                'option_name_id':"",
+                "option_value_id":""
+            },
+             {
+                'option_name_id':"",
+                "option_value_id":""
+            },
+        ]}
+        ]
+        
+    }
+    products_obj = DatabaseModel.save_documents(products,product_obj_save)
+    for z in product_obj_save['varients']:
+        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":z['finished_price'],"un_finished_price":z['un_finished_price'],"quantity":z['quantity']})
+        for i in z['options']:
+            product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
+            DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
+        DatabaseModel.update_documents(products.objects,{"id":products_obj.id},{"add_to_set__options":product_varient_obj.id})
     products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj.id,'category_level':category_name,"category_id":category_id})
     data = dict()
     data['is_created'] = True
@@ -735,8 +777,6 @@ def retrieveData(request):
                 # Store the JSON data for the current sheet
                 all_sheets_json[sheet_name] = json_data
 
-            # Print or save the JSON data for all sheets
-            print(all_sheets_json)
             with open('sheets_output.json', 'w') as json_file:
                 json.dump(all_sheets_json, json_file)
         elif file.name.endswith('.csv'):
@@ -744,7 +784,6 @@ def retrieveData(request):
 
             json_data = df.to_json(orient='records')
 
-            print(json_data)
         elif file.name.endswith('.txt'):
             df = pd.read_csv(file, sep='\t') 
 
@@ -768,7 +807,7 @@ def obtainVarientForCategory(request):
     category_id = request.GET.get("id")
     print(category_id)
     pipeline = [
-    {
+        {
             "$match":{'category_id':category_id}
         },
         {
@@ -778,22 +817,22 @@ def obtainVarientForCategory(request):
             'foreignField': '_id',
             'as': 'varient_option'
         }
-    }, 
-    {
+        }, 
+        {
             '$unwind': {
                 'path': '$varient_option',
                 'preserveNullAndEmptyArrays': True
             }
         },
-         {
+        {
         '$lookup': {
             'from': 'type_name',
             'localField': 'varient_option.option_name_id',
             'foreignField': '_id',
             'as': 'type_name'
         }
-    }, 
-    {
+        }, 
+        {
             '$unwind': {
                 'path': '$type_name',
                 'preserveNullAndEmptyArrays': True
@@ -805,14 +844,14 @@ def obtainVarientForCategory(request):
             'foreignField': '_id',
             'as': 'type_value'
         }
-    }, 
-    {
+        }, 
+        {
             '$unwind': {
                 'path': '$type_value',
                 'preserveNullAndEmptyArrays': True
             }
         },
-    {
+        {
         '$group': {
             "_id":"$varient_option",
             "type_name":{'$first':"$type_name.name"},
@@ -825,7 +864,7 @@ def obtainVarientForCategory(request):
                 }
             }
         }
-    },{
+        },{
         '$project':{
             "_id":0,
             "type_name":1,
@@ -834,9 +873,10 @@ def obtainVarientForCategory(request):
             'type_id':1
 
         }
-    }
-    ]
+        }
+        ]
     result = list(category_varient.objects.aggregate(*pipeline))
+    
     data = dict()
     data['category_varient_id'] = ""
     if len(result)>0:
@@ -856,30 +896,37 @@ def createVarientOption(request):
     name = json_req.get("name")
     category_varient_id = json_req.get("category_varient_id")
     category_id = json_req.get("category_id")
-    if category_varient_id == None:
+    if category_varient_id == "":
         category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':category_id})
         category_varient_id = str(category_varient_obj.id)
     type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':name})
     if type_name_obj:
         type_name_id = type_name_obj.id
+        varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':type_name_id})
+        if varient_option_obj:
+            varient_option_id = varient_option_obj.id
+        else:
+            varient_option_obj = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
+            varient_option_id = varient_option_obj.id
     else:
         type_name_id = DatabaseModel.save_documents(type_name,{'name':name})
-    varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
+        varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
     DatabaseModel.update_documents(category_varient.objects,{"id":category_varient_id},{'add_to_set__varient_option_id_list':varient_option_id})
     data = dict()
     data['is_created'] = True
     return data
 
+@csrf_exempt
 def createValueForVarientName(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
-    type_value_id = json_req.get("type_value_id")
+    option_id = json_req.get("option_id")
     type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':name})
     if type_value_obj:
         type_value_id = type_value_obj.id
     else:
         type_value_id = DatabaseModel.save_documents(type_value,{'name':name})
-    DatabaseModel.update_documents(varient_option.objects,{"option_name_id":type_value_id},{'add_to_set__option_value_id_list':type_value_id})
+    DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id},{'add_to_set__option_value_id_list':type_value_id})
     data = dict()
     data['is_created'] = True
     return data
