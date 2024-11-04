@@ -33,21 +33,43 @@ class level_one_category(Document):
 class category(Document):
     name = fields.StringField(required=True)
     level_one_category_list = fields.ListField(fields.ReferenceField(level_one_category),default = [])
-    
-class Stain(Document):
+
+class type_name(Document):
     name = fields.StringField()
 
+class type_value(Document):
+    name = fields.StringField()
+    images = fields.ListField(fields.StringField())
+
+class varient_option(Document):
+    option_name_id = fields.ReferenceField(type_name)
+    option_value_id_list = fields.ListField(fields.ReferenceField(type_value),default = [])
+
+class product_varient(Document):
+    sku_number = fields.StringField(required=True)
+    varient_option_id = fields.ListField(fields.ReferenceField(varient_option))
+    image_url = fields.ListField(fields.StringField())
+    finished_price = fields.FloatField(default=0.0)     
+    un_finished_price = fields.FloatField(default=0.0) 
+    quantity = fields.FloatField()
+
 class products(Document):
-    Manufacturer_name = fields.StringField()
-    tags = fields.StringField()
+    model = fields.StringField()
+    mpn = fields.StringField(required=True)
+    upc_ean = fields.StringField()
+    breadcrumb = fields.StringField()
+    brand_name = fields.StringField(required=True)
+    product_name = fields.StringField(required=True)
+    long_description = fields.StringField(required=True)
+    short_description = fields.StringField()
+    features = fields.ListField(fields.StringField())
+    attributes = fields.DictField(default={})
+    tags = fields.ListField(fields.StringField())
+    msrp = fields.FloatField(default=0.0)
+    base_price = fields.FloatField(default=0.0)     
     category_level_id = fields.StringField()
-    Tags = fields.StringField()
-    product_name = fields.StringField()
-    Handle = fields.StringField()
-    Description  = fields.StringField()
-    BasePrice = fields.StringField() #price in $
-    ImageURL = fields.ListField()
     Key_features = fields.StringField()
+    options = fields.ListField(fields.ReferenceField(product_varient))
 
 class leaf_option(EmbeddedDocument):
     leaf_count = fields.IntField()
@@ -56,36 +78,22 @@ class leaf_option(EmbeddedDocument):
     varient_code = fields.StringField()
     name = fields.StringField()
 
-class wood_type(Document):
-    name = fields.StringField()
-    description = fields.StringField()
-    image = fields.StringField()
-    Recommended_stains = fields.ListField(fields.StringField())
-   
-class varient_option(Document):
-    varient_count = fields.IntField()
-    option_name = fields.StringField()
-    option_value_id = fields.StringField()
 
-class Variants(Document):
-    product_id = fields.ReferenceField(products)
-    size =  fields.StringField()
-    options = fields.ListField(fields.ReferenceField(varient_option))
-    name = fields.StringField()
-    Stain_id = fields.ReferenceField(Stain)
-    varient_sku  =  fields.StringField()
-    unfinished_price = fields.IntField()
-    finished_price = fields.IntField()
-    image_url =  fields.StringField()
-class size_option(Document):
-    name = fields.StringField()
+   
+
 
 class ignore_calls(Document):
     name = fields.StringField()
 
-class category_level(Document):
-    name = fields.StringField()
 class product_category_config(Document):
     product_id = fields.ReferenceField(products)
-    category_level = fields.ReferenceField(category_level)
+    category_level = fields.StringField()
     category_id = fields.StringField()
+
+class vendor(Document):
+    name = fields.StringField(required=True)
+    manufacture = fields.StringField()
+
+class category_varient(Document):
+    category_id = fields.StringField()
+    varient_option_id_list = fields.ListField(fields.ReferenceField(varient_option),default = [])

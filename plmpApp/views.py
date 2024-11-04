@@ -3,16 +3,17 @@ from django.http import JsonResponse
 from .models import category
 from .models import products
 from .models import product_type
-from .models import wood_type
 from .models import section
-from .models import Variants
 from .models import varient_option
 from .models import level_one_category
 from .models import level_two_category
 from .models import level_three_category
 from .models import level_four_category
 from .models import level_five_category
-from .models import size_option
+from .models import product_category_config
+from .models import category_varient
+from .models import type_name
+from .models import type_value
 from django.http import HttpResponse
 from openpyxl import Workbook
 import pandas as pd
@@ -76,6 +77,7 @@ def createCategory3(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     section_id = json_req.get("category_id")
+    print(name, section_id )
     product_type_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
     DatabaseModel.update_documents(level_two_category.objects,{"id":section_id},{'add_to_set__level_three_category_list':product_type_obj.id})
     data = dict()
@@ -91,6 +93,7 @@ def createCategory4(request):
     data = dict()
     data['is_created'] = True
     return data
+
 @csrf_exempt
 def createCategory5(request):
     json_req = JSONParser().parse(request)
@@ -102,68 +105,93 @@ def createCategory5(request):
     data['is_created'] = True
     return data
 
+@csrf_exempt
+def createProduct(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    category_id = json_req.get("category_id")
+    category_name = json_req.get("category_name")
+    products_obj = DatabaseModel.save_documents(products,{'product_name':name})
+    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj.id,'category_level':category_name,"category_id":category_id})
+    data = dict()
+    data['is_created'] = True
+    return data
+
 
 #delete
 @csrf_exempt
 def deleteCategory(request):
     json_req = JSONParser().parse(request)
     id = json_req.get("id")
-    DatabaseModel.delete_documents(category,{'id':id})
+    category_name = json_req.get("category_name")
     data = dict()
-    data['is_deleted'] = True
-    return data
+    if category_name == "level-1":
+        category_obj = DatabaseModel.get_document(category.objects,{'id':id})
+        if len(category_obj.level_one_category_list)>0:
+            data['error'] = "level two category is added so category cannot be deleted"
+        else:
+            product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+            if product_category_config_obj:
+                data['error'] = "product  is added so category cannot be deleted"
+            else:
+                DatabaseModel.delete_documents(category.objects,{'id':id})
 
-@csrf_exempt
-def deleteCategory1(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    category_id = json_req.get("category_id")
-    DatabaseModel.delete_documents(level_one_category,{'id':id})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_one_category_list':id})
-    data = dict()
-    data['is_deleted'] = True
-    return data
-
-@csrf_exempt
-def deleteCategory2(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    category_id = json_req.get("category_id")
-    DatabaseModel.delete_documents(level_two_category,{'id':id})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_two_category_list':id})
-    data = dict()
-    data['is_deleted'] = True
-    return data
-
-@csrf_exempt
-def deleteCategory3(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    category_id = json_req.get("category_id")
-    DatabaseModel.delete_documents(level_three_category,{'id':id})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_three_category_list':id})
-    data = dict()
-    data['is_deleted'] = True
-    return data
-
-@csrf_exempt
-def deleteCategory4(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    category_id = json_req.get("category_id")
-    DatabaseModel.delete_documents(level_four_category,{'id':id})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_four_category_list':id})
-    data = dict()
-    data['is_deleted'] = True
-    return data
-
-@csrf_exempt
-def deleteCategory5(request):
-    json_req = JSONParser().parse(request)
-    id = json_req.get("id")
-    category_id = json_req.get("category_id")
-    DatabaseModel.delete_documents(level_five_category,{'id':id})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_five_category_list':id})
+    elif category_name == "level-2":
+        category_id = json_req.get("category_id")
+        category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':id})
+        if len(category_obj.level_two_category_list)>0:
+            data['error'] = "level three category is added so category cannot be deleted"
+        else:
+            product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+            if product_category_config_obj:
+                data['error'] = "product  is added so category cannot be deleted"
+            else:
+                DatabaseModel.delete_documents(level_one_category.objects,{'id':id})
+                DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_one_category_list':id})
+    elif category_name == "level-3":
+        category_id = json_req.get("category_id")
+        category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':id})
+        if len(category_obj.level_three_category_list)>0:
+            data['error'] = "level four category is added so category cannot be deleted"
+        else:
+            product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+            if product_category_config_obj:
+                data['error'] = "product  is added so category cannot be deleted"
+            else:
+                DatabaseModel.delete_documents(level_two_category.objects,{'id':id})
+                DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_two_category_list':id})
+    elif category_name == "level-4":
+        category_id = json_req.get("category_id")
+        category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':id})
+        if len(category_obj.level_four_category_list)>0:
+            data['error'] = "level five category is added so category cannot be deleted"
+        else:
+            product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+            if product_category_config_obj:
+                data['error'] = "product  is added so category cannot be deleted"
+            else:
+                DatabaseModel.delete_documents(level_three_category.objects,{'id':id})
+                DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_three_category_list':id})
+    elif category_name == "level-5":
+        category_id = json_req.get("category_id")
+        category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':id})
+        if len(category_obj.level_five_category_list)>0:
+            data['error'] = "level six category is added so category cannot be deleted"
+        else:
+            product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+            if product_category_config_obj:
+                data['error'] = "product  is added so category cannot be deleted"
+            else:
+                DatabaseModel.delete_documents(level_four_category.objects,{'id':id})
+                DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_four_category_list':id})
+    elif category_name == "level-6":
+        category_id = json_req.get("category_id")
+        product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'category_id':id})
+        if product_category_config_obj:
+            data['error'] = "product  is added so category cannot be deleted"
+        else:
+            DatabaseModel.delete_documents(level_five_category.objects,{'id':id})
+            DatabaseModel.update_documents(category.objects,{"id":category_id},{'pull__level_five_category_list':id})
     data = dict()
     data['is_deleted'] = True
     return data
@@ -182,11 +210,11 @@ def updateCategory(request):
     elif category_name == "level-3":
         DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
     elif category_name == "level-4":
-        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+        DatabaseModel.update_documents(level_three_category.objects,{'id':id},{'name':name})
     elif category_name == "level-5":
-        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+        DatabaseModel.update_documents(level_four_category.objects,{'id':id},{'name':name})
     elif category_name == "level-6":
-        DatabaseModel.update_documents(level_two_category.objects,{'id':id},{'name':name})
+        DatabaseModel.update_documents(level_five_category.objects,{'id':id},{'name':name})
     data = dict()
     data['is_updated'] = True
     return data
@@ -250,7 +278,6 @@ def obtainCategoryAndSections(request):
 
     flat_result = list(category.objects.aggregate(*pipeline))
     transformed_result = [] 
-
     for entry in flat_result:  
         category_entry = {
             "_id": entry['_id'],
@@ -321,34 +348,47 @@ def obtainCategoryAndSections(request):
 
 @csrf_exempt
 def obtainAllProductList(request):
-    # json_req = JSONParser().parse(request)
-    product_type_id = request.POST.get("id")
-    if product_type_id:
-        product_type_id = {'product_type_id':ObjectId(product_type_id)}
+    category_id = request.POST.get("id")
+    if category_id:
+        category_obj = {'category_id':category_id}
     else:
-        product_type_id = {}
+        category_obj = {}
     pipeline = [
     {
-            "$match":product_type_id
+            "$match":category_obj
+        },
+        {
+        '$lookup': {
+            'from': 'products',
+            'localField': 'product_id',
+            'foreignField': '_id',
+            'as': 'products'
+        }
+    }, 
+    {
+            '$unwind': {
+                'path': '$products',
+                'preserveNullAndEmptyArrays': True
+            }
         },
     {
         '$group': {
             "_id":None,
             'product_list': {
                 "$push": {
-                    'product_name': "$product_name",
-                    'product_id': "$_id",
-                    'url':"$ImageURL",
-                    "Manufacturer_name":"$Manufacturer_name",
-                    "tags":"$tags",
-                    "BasePrice":"$BasePrice",
-                    "Key_features":"$Key_features"
+                    'product_name': "$products.product_name",
+                    'product_id': "$products._id",
+                    'url':"$products.ImageURL",
+                    "Manufacturer_name":"$products.Manufacturer_name",
+                    "tags":"$products.tags",
+                    "BasePrice":"$products.BasePrice",
+                    "Key_features":"$products.Key_features"
                 }
             }
         }
     }
     ]
-    result = list(products.objects.aggregate(*pipeline))
+    result = list(product_category_config.objects.aggregate(*pipeline))
     if len(result)>0:
         result = result[0]
         del result['_id']
@@ -425,25 +465,25 @@ def upload_file(request):
         Variants_opt_id_list = list()
         for i in options:
             option_value_id = ""
-            if i['name'] =="Wood Type":
-                wood_type_obj = DatabaseModel.get_document(wood_type.objects,{"name":i['value']})
-                if wood_type_obj:
-                    option_value_id = wood_type_obj.id
-                else:
-                    wood_type_obj = DatabaseModel.save_documents(wood_type,{'name':i['value']})
-                    option_value_id = wood_type_obj.id
-            if i['name'] =="Size":
-                size_option_obj = DatabaseModel.get_document(size_option.objects,{"name":i['value']})
-                if size_option_obj:
-                    option_value_id = size_option_obj.id
-                else:
-                    size_option_obj = DatabaseModel.save_documents(size_option,{'name':i['value']})
-                    option_value_id = size_option_obj.id
+            # if i['name'] =="Wood Type":
+            #     # wood_type_obj = DatabaseModel.get_document(wood_type.objects,{"name":i['value']})
+            #     if wood_type_obj:
+            #         option_value_id = wood_type_obj.id
+            #     else:
+            #         # wood_type_obj = DatabaseModel.save_documents(wood_type,{'name':i['value']})
+            #         option_value_id = wood_type_obj.id
+            # if i['name'] =="Size":
+            #     # size_option_obj = DatabaseModel.get_document(size_option.objects,{"name":i['value']})
+            #     if size_option_obj:
+            #         option_value_id = size_option_obj.id
+            #     else:
+            #         # size_option_obj = DatabaseModel.save_documents(size_option,{'name':i['value']})
+            #         option_value_id = size_option_obj.id
             Variants_opt_obj = DatabaseModel.save_documents(varient_option,{'varient_count':0,"option_name":i['name'],'option_value_id':str(option_value_id)})
             Variants_opt_id_list.append(Variants_opt_obj.id)
-        if isinstance(product_image, str):
-            DatabaseModel.save_documents(Variants,{'product_id':product_obj.id,"options":Variants_opt_id_list,"varient_sku":varient_sku,"unfinished_price":0,"finished_price":variant_Price,"image_url":product_image})
-    data['status'] = True
+    #     if isinstance(product_image, str):
+    #         DatabaseModel.save_documents(Variants,{'product_id':product_obj.id,"options":Variants_opt_id_list,"varient_sku":varient_sku,"unfinished_price":0,"finished_price":variant_Price,"image_url":product_image})
+    # data['status'] = True
     return data 
 
 
@@ -502,8 +542,8 @@ def productUpdate(request):
 def varientBulkUpdate(request):
     json_req = JSONParser().parse(request)
     varient_obj_list = json_req['varient_obj_list']
-    for i in varient_obj_list:
-        DatabaseModel.update_documents(Variants.objects,{'id':i['id']},i['update_obj'])
+    # for i in varient_obj_list:
+    #     DatabaseModel.update_documents(Variants.objects,{'id':i['id']},i['update_obj'])
     data = dict()
     data['is_updated'] = True
     return data
@@ -511,78 +551,8 @@ def varientBulkUpdate(request):
 @csrf_exempt
 def obtainAllVarientList(request):
     json_req = JSONParser().parse(request)
-    product_id = ObjectId(json_req['id'])
-    pipeline = [
-        {
-            "$match": {'product_id': product_id}
-        },
-        {
-            '$lookup': {
-                "from": 'varient_option',
-                "localField": 'options',
-                "foreignField": "_id",
-                "as": "varient_option_ins"
-            }
-        },
-        {
-            "$group": {
-                "_id": "$_id",
-                "name": { "$first": "$name" },
-                "varient_sku": { "$first": "$varient_sku" },
-                "unfinished_price": { "$first": "$unfinished_price" },
-                "finished_price": { "$first": "$finished_price" },
-                "varient_code": { "$first": "$varient_code" },
-                "options": {
-                    "$push": {
-                        "$map": {
-                            "input": "$varient_option_ins",
-                            "as": "option",
-                            "in": {
-                                "option_name": "$$option.option_name",
-                                "option_value": "$$option.option_value"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        {
-            '$unwind': "$options" 
-        },
-        {
-            '$project': {
-                "id": "$_id",
-                "_id": 0,
-                "name": 1,
-                "varient_sku": 1,
-                "unfinished_price": 1,
-                "finished_price": 1,
-                "varient_code": 1,
-                "options": 1
-            }
-        }
-    ]
-    result = list(Variants.objects.aggregate(*pipeline))
-    option_dict = dict()
-    if len(result)>0:
-        for Variant_obj in result:
-            Variant_obj['id'] = str(Variant_obj['id'])
-            for i in Variant_obj['options']:
-                if i['option_name'] == "Wood Type":
-                    if str(i['option_value']) in option_dict:
-                        i['option_value'] = option_dict[str(i['option_value'])]
-                    else:
-                        wood_type_obj = DatabaseModel.get_document(wood_type.objects,{'id':i['option_value']})
-                        option_dict[str(i['option_value'])] = wood_type_obj.name
-                        i['option_value'] = wood_type_obj.name
-                if i['option_name'] == "Size":
-                    if str(i['option_value']) in option_dict:
-                        i['option_value'] = option_dict[str(i['option_value'])]
-                    else:
-                        size_option_obj = DatabaseModel.get_document(size_option.objects,{'id':i['option_value']})
-                        option_dict[str(i['option_value'])] = size_option_obj.name
-                        i['option_value'] = size_option_obj.name
-    return  result
+    product_id = ObjectId(json_req['product_id'])
+    return  product_id
 
 
 @csrf_exempt
@@ -657,7 +627,7 @@ def exportAll(request):
                 "Image Src": { "$first": "$ImageURL" },
                 "Handle": { "$first": "$product_ins.Handle" },
                 "Title": { "$first": "$product_ins.product_name" },
-                "Vendor": { "$first": "$product_ins.Manufacturer_name" },
+                "Manufacturer_name": { "$first": "$product_ins.Manufacturer_name" },
                 "Tags": { "$first": "$product_ins.tags" },
                 "Key_features": { "$first": "$product_ins.Key_features" },
                 "Product Category": {
@@ -696,7 +666,7 @@ def exportAll(request):
             }
         }
     ]
-    result = list(Variants.objects.aggregate(*pipeline))
+    result = list(products.objects.aggregate(*pipeline))
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
@@ -792,3 +762,124 @@ def retrieveData(request):
     except Exception as e:
         print(">>>",e)
         return data
+    
+@csrf_exempt
+def obtainVarientForCategory(request):
+    category_id = request.GET.get("id")
+    print(category_id)
+    pipeline = [
+    {
+            "$match":{'category_id':category_id}
+        },
+        {
+        '$lookup': {
+            'from': 'varient_option',
+            'localField': 'varient_option_id_list',
+            'foreignField': '_id',
+            'as': 'varient_option'
+        }
+    }, 
+    {
+            '$unwind': {
+                'path': '$varient_option',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+         {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'varient_option.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+    }, 
+    {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'varient_option.option_value_id_list',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+    }, 
+    {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":"$varient_option",
+            "type_name":{'$first':"$type_name.name"},
+            "type_id":{'$first':"$type_name._id"},
+            "category_varient_id":{'$first':"$_id"},
+            'option_value_list': {
+                "$push": {
+                    'type_value_name': "$type_value.name",
+                    'type_value_id': "$type_value._id",
+                }
+            }
+        }
+    },{
+        '$project':{
+            "_id":0,
+            "type_name":1,
+            'option_value_list': 1,
+            'category_varient_id':1,
+            'type_id':1
+
+        }
+    }
+    ]
+    result = list(category_varient.objects.aggregate(*pipeline))
+    data = dict()
+    data['category_varient_id'] = ""
+    if len(result)>0:
+        for i in result:
+            i['type_id'] = str(i['type_id']) if 'type_id'in i else ""
+            data['category_varient_id'] = str(i['category_varient_id'])
+            del i['category_varient_id']
+            i['type_id'] = str(i['type_id'])
+            for j in i['option_value_list']:
+                j['type_value_id'] = str(j['type_value_id']) if 'type_value_id'in j else ""
+    data['varient_list'] = result
+    return data
+
+@csrf_exempt
+def createVarientOption(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    category_varient_id = json_req.get("category_varient_id")
+    category_id = json_req.get("category_id")
+    if category_varient_id == None:
+        category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':category_id})
+        category_varient_id = str(category_varient_obj.id)
+    type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':name})
+    if type_name_obj:
+        type_name_id = type_name_obj.id
+    else:
+        type_name_id = DatabaseModel.save_documents(type_name,{'name':name})
+    varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
+    DatabaseModel.update_documents(category_varient.objects,{"id":category_varient_id},{'add_to_set__varient_option_id_list':varient_option_id})
+    data = dict()
+    data['is_created'] = True
+    return data
+
+def createValueForVarientName(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name")
+    type_value_id = json_req.get("type_value_id")
+    type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':name})
+    if type_value_obj:
+        type_value_id = type_value_obj.id
+    else:
+        type_value_id = DatabaseModel.save_documents(type_value,{'name':name})
+    DatabaseModel.update_documents(varient_option.objects,{"option_name_id":type_value_id},{'add_to_set__option_value_id_list':type_value_id})
+    data = dict()
+    data['is_created'] = True
+    return data

@@ -41,8 +41,7 @@ class CustomMiddleware:
 
     @skip_for_paths()
     def __call__(self, request):
-        res = self.get_response(request)  
-        print(res)
+        res = self.get_response(request) 
         if isinstance(res, JsonResponse):
             return res
 
