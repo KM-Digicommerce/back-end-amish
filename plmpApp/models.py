@@ -1,9 +1,10 @@
 from mongoengine import Document , fields,EmbeddedDocument
 
-class User(Document):
-    username = fields.StringField(required=True)
+class user(Document):
+    name = fields.StringField(required=True)
     email = fields.StringField(required=True)
-    age = fields.IntField()
+    role = fields.StringField()
+    password = fields.StringField()
 
 class product_type(Document):
     name = fields.StringField(required=True)
@@ -11,23 +12,69 @@ class section(Document):
     name = fields.StringField(required=True)
     product_type_list = fields.ListField(fields.ReferenceField(product_type))
 
+class level_five_category(Document):
+    name = fields.StringField(required=True)
+
+class level_four_category(Document):
+    name = fields.StringField(required=True)
+    level_five_category_list = fields.ListField(fields.ReferenceField(level_five_category),default = [])
+
+class level_three_category(Document):
+    name = fields.StringField(required=True)
+    level_four_category_list = fields.ListField(fields.ReferenceField(level_four_category),default = [])
+
+class level_two_category(Document):
+    name = fields.StringField(required=True)
+    level_three_category_list = fields.ListField(fields.ReferenceField(level_three_category),default = [])
+
+class level_one_category(Document):
+    name = fields.StringField(required=True)
+    level_two_category_list = fields.ListField(fields.ReferenceField(level_two_category),default = [])
+
 class category(Document):
     name = fields.StringField(required=True)
-    section_list = fields.ListField(fields.ReferenceField(section),default = [])
-class Stain(Document):
+    level_one_category_list = fields.ListField(fields.ReferenceField(level_one_category),default = [])
+
+class type_name(Document):
     name = fields.StringField()
 
+class type_value(Document):
+    name = fields.StringField()
+    images = fields.ListField(fields.StringField())
+
+class varient_option(Document):
+    option_name_id = fields.ReferenceField(type_name)
+    option_value_id_list = fields.ListField(fields.ReferenceField(type_value),default = [])
+
+class product_varient_option(Document):
+    option_name_id = fields.ReferenceField(type_name)
+    option_value_id = fields.ReferenceField(type_value)
+
+class product_varient(Document):
+    sku_number = fields.StringField(required=True)
+    varient_option_id = fields.ListField(fields.ReferenceField(product_varient_option))
+    image_url = fields.ListField(fields.StringField())
+    finished_price = fields.FloatField(default=0.0)
+    un_finished_price = fields.FloatField(default=0.0)
+    quantity = fields.FloatField()
+
 class products(Document):
-    ManufacturerName = fields.StringField()
-    tags = fields.StringField()
-    product_type_id = fields.ReferenceField(product_type)
-    Tags = fields.StringField()
-    productName = fields.StringField()
-    Handle = fields.StringField()
-    Description  = fields.StringField()
-    BasePrice = fields.IntField() #price in $
-    ImageURL = fields.StringField()
+    model = fields.StringField()
+    # mpn = fields.StringField(required=True)
+    upc_ean = fields.StringField()
+    breadcrumb = fields.StringField()
+    brand_name = fields.StringField(required=True)
+    product_name = fields.StringField(required=True)
+    long_description = fields.StringField(required=True)
+    short_description = fields.StringField()
+    features = fields.ListField(fields.StringField())
+    attributes = fields.DictField(default={})
+    tags = fields.ListField(fields.StringField())
+    msrp = fields.FloatField(default=0.0)
+    base_price = fields.FloatField(default=0.0)
     Key_features = fields.StringField()
+    options = fields.ListField(fields.ReferenceField(product_varient))
+
 class leaf_option(EmbeddedDocument):
     leaf_count = fields.IntField()
     unfinished_price = fields.IntField()
@@ -35,30 +82,22 @@ class leaf_option(EmbeddedDocument):
     varient_code = fields.StringField()
     name = fields.StringField()
 
-class wood_type(Document):
-    name = fields.StringField()
-    description = fields.StringField()
-    image = fields.StringField()
-    Recommended_stains = fields.ListField(fields.StringField())
-   
-class varient_option(Document):
-    varient_count = fields.IntField()
-    option_name = fields.StringField()
-    option_value_id = fields.StringField()
-
-class Variants(Document):
-    product_id = fields.ReferenceField(products)
-    size =  fields.StringField()
-    options = fields.ReferenceField(varient_option)
-    leafOptions = fields.ListField(fields.EmbeddedDocumentField(leaf_option))
-    name = fields.StringField()
-    Stain_id = fields.ReferenceField(Stain)
-    varient_sku  =  fields.StringField()
-    unfinished_price = fields.IntField()
-    finished_price = fields.IntField()
-    image_url =  fields.StringField()
-class size_option(Document):
-    name = fields.StringField()
-
 class ignore_calls(Document):
     name = fields.StringField()
+
+class product_category_config(Document):
+    product_id = fields.ReferenceField(products)
+    category_level = fields.StringField()
+    category_id = fields.StringField()
+
+class vendor(Document):
+    name = fields.StringField(required=True)
+    manufacture = fields.StringField()
+
+class category_varient(Document):
+    category_id = fields.StringField()
+    varient_option_id_list = fields.ListField(fields.ReferenceField(varient_option),default = [])
+
+class capability(Document):
+    action_name = fields.StringField()
+    role_list = fields.ListField(fields.StringField(),default = [])
