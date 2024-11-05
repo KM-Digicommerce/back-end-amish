@@ -2,13 +2,14 @@
 
 from django.urls import path
 from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName
-
+from .authentication import loginUser
 
 urlpatterns = [
     path('v1/', v1, name='v1'), 
     path('list-users/', create_user, name='list_users'),
+    path('list-users/', create_user, name='list_users'),
     #create
-    path('createCategory/', createCategory, name='createCategory'), 
+    path('loginUser/', loginUser, name='loginUser'), 
     path('createCategory1/', createCategory1, name='createCategory1'), 
     path('createCategory2/', createCategory2, name='createCategory2'), 
     path('createCategory3/', createCategory3, name='createCategory3'), 

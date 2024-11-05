@@ -27,8 +27,9 @@ from bson import ObjectId
 from rest_framework import status
 from rest_framework.decorators import api_view
 from .global_service import DatabaseModel
-
+from django.core.management.utils import get_random_secret_key
 def v1(request):
+    print(get_random_secret_key())
     return JsonResponse({"PLMP_API":"v2"},safe=False)
 def create_user(request):
     json_request = json.loads(request.body)

@@ -1,9 +1,10 @@
 from mongoengine import Document , fields,EmbeddedDocument
 
-class User(Document):
-    user_name = fields.StringField(required=True)
+class user(Document):
+    name = fields.StringField(required=True)
     email = fields.StringField(required=True)
-    age = fields.IntField()
+    role = fields.StringField()
+    password = fields.StringField()
 
 class product_type(Document):
     name = fields.StringField(required=True)
@@ -80,10 +81,6 @@ class leaf_option(EmbeddedDocument):
     finished_price = fields.IntField()
     varient_code = fields.StringField()
     name = fields.StringField()
-
-
-   
-
 
 class ignore_calls(Document):
     name = fields.StringField()
