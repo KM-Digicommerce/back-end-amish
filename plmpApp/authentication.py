@@ -31,13 +31,12 @@ def loginUser(request):
             'max_age': SIMPLE_JWT['SESSION_COOKIE_MAX_AGE']
         }
         token = jwt.encode(payload=payload, key=SIMPLE_JWT['SIGNING_KEY'], algorithm=SIMPLE_JWT['ALGORITHM'])
-        token = token.decode('utf-8')
+        # token = token.decode('utf-8')
         valid = True
         response = createJsonResponse(request, token)
         createCookies(token, response)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
-    print(">>>>>>>>",response)
     return response
 
 

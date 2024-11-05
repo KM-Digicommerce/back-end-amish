@@ -97,3 +97,7 @@ class vendor(Document):
 class category_varient(Document):
     category_id = fields.StringField()
     varient_option_id_list = fields.ListField(fields.ReferenceField(varient_option),default = [])
+
+class capability(Document):
+    action_name = fields.StringField()
+    role_list = fields.ListField(fields.StringField(),default = [])
