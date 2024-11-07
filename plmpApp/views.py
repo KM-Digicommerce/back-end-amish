@@ -110,8 +110,8 @@ def createCategory5(request):
 def createProduct(request):
     json_req = JSONParser().parse(request)
     product_obj = json_req.get("product_obj")
-    category_id = json_req.get("category_id")
-    category_name = json_req.get("category_name")
+    category_id = product_obj["category_id"]
+    category_name = product_obj["category_name"]
     product_obj_save = {
         "model" :product_obj['model'],
         "upc_ean" :product_obj['upc_ean'],
@@ -125,37 +125,16 @@ def createProduct(request):
         "tags":product_obj['tags'],
         "msrp":product_obj['msrp'],
         "base_price":product_obj['base_price'],
-        "Key_features":product_obj['Key_features'],
-        "varients":[{  
-        "sku_number":"",
-        "finished_price":"",
-        "un_finished_price":"",
-        "quantity":"",
-        "options":[
-            {
-                'option_name_id':"",
-                "option_value_id":""
-            },
-             {
-                'option_name_id':"",
-                "option_value_id":""
-            },
-             {
-                'option_name_id':"",
-                "option_value_id":""
-            },
-        ]}
-        ]
-        
+        "key_features":product_obj['key_features']
     }
-    products_obj = DatabaseModel.save_documents(products,product_obj_save)
-    for z in product_obj_save['varients']:
+    products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
+    for z in product_obj['varients']:
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":z['finished_price'],"un_finished_price":z['un_finished_price'],"quantity":z['quantity']})
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
-        DatabaseModel.update_documents(products.objects,{"id":products_obj.id},{"add_to_set__options":product_varient_obj.id})
-    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj.id,'category_level':category_name,"category_id":category_id})
+        DatabaseModel.update_documents(products.objects,{"id":products_obj_1.id},{"add_to_set__options":product_varient_obj.id})
+    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj_1.id,'category_level':category_name,"category_id":category_id})
     data = dict()
     data['is_created'] = True
     return data
@@ -391,9 +370,64 @@ def obtainCategoryAndSections(request):
 
 @csrf_exempt
 def obtainAllProductList(request):
-    category_id = request.POST.get("id")
+    # json_req = JSONParser().parse(request)
+    category_id = request.GET.get("id")
+    level_name = request.GET.get("level_name")
     if category_id:
-        category_obj = {'category_id':category_id}
+        all_ids = []
+        if level_name == "level-1":
+            category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
+            if category_obj:
+                all_ids.append(category_id)
+                for i in category_obj.level_one_category_list:
+                    all_ids.append(i.id)
+                    for j in i.level_two_category_list:
+                        all_ids.append(j.id)
+                        for k in j.level_three_category_list:
+                            all_ids.append(k.id)
+                            for l in  k.level_four_category_list:
+                                all_ids.append(l.id)
+                                for m in  l.level_five_category_list:
+                                    all_ids.append(m.id)
+        elif  level_name == "level-2":
+            level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
+            if level_one_category_obj:
+                all_ids.append(level_one_category_obj.id)
+                for j in level_one_category_obj.level_two_category_list:
+                    all_ids.append(j.id)
+                    for k in j.level_three_category_list:
+                        all_ids.append(k.id)
+                        for l in  k.level_four_category_list:
+                            all_ids.append(l.id)
+                            for m in  l.level_five_category_list:
+                                all_ids.append(m.id)
+        elif  level_name == "level-3":
+            level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
+            if level_two_category_obj:
+                all_ids.append(level_two_category_obj.id)
+                for k in level_two_category_obj.level_three_category_list:
+                    all_ids.append(k.id)
+                    for l in  k.level_four_category_list:
+                        all_ids.append(l.id)
+                        for m in  l.level_five_category_list:
+                            all_ids.append(m.id)
+        elif  level_name == "level-4":
+            level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
+            if level_three_category_obj:
+                all_ids.append(level_three_category_obj.id)
+                for l in  level_three_category_obj.level_four_category_list:
+                    all_ids.append(l.id)
+                    for m in  l.level_five_category_list:
+                        all_ids.append(m.id)
+        elif  level_name == "level-5":
+            level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
+            if level_four_category_obj:
+                all_ids.append(level_four_category_obj.id)
+                for m in  level_four_category_obj.level_five_category_list:
+                    all_ids.append(m.id)
+        print(all_ids)
+
+        category_obj = {"category_id":{'$in':[all_ids]}}
     else:
         category_obj = {}
     pipeline = [

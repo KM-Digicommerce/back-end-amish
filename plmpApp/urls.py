@@ -5,7 +5,8 @@ from .views import v1, create_user,createCategory,createCategory1, createCategor
 from .authentication import loginUser
 
 urlpatterns = [
-    path('', v1, name='v1'), 
+    
+    path('v1/', v1, name='v1'), 
     path('list-users/', create_user, name='list_users'),
     path('list-users/', create_user, name='list_users'),
     #create

@@ -37,6 +37,7 @@ def loginUser(request):
         createCookies(token, response)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
+    print(">>>",response)
     return response
 
 
