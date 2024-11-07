@@ -18,7 +18,6 @@ def loginUser(request):
     jsonRequest = JSONParser().parse(request)
     user_data_obj = DatabaseModel.get_document(user.objects, jsonRequest)
     token = ''
-    print(">>>",user_data_obj)
     if user_data_obj == None:
         response = createJsonResponse(request)
         valid = False
@@ -38,7 +37,7 @@ def loginUser(request):
         createCookies(token, response)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
-    print(response)
+    print(">>>",response)
     return response
 
 

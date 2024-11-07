@@ -91,13 +91,17 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    front_end_ip
+    front_end_ip,
 ]
+
+
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    front_end_ip
+    front_end_ip,
 ]
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
