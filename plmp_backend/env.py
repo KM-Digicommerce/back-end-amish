@@ -1,6 +1,6 @@
 MONGODB_COURSE_DB_NAME="PLMP"
 MONGODB_HOST_1="mongodb://localhost:27017"  
-
+front_end_ip = "http://192.168.1.18:3000"
 from datetime import timedelta
 SIMPLE_JWT = {
   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=500),
