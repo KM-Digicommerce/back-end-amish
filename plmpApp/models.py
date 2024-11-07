@@ -77,8 +77,8 @@ class products(Document):
 
 class leaf_option(EmbeddedDocument):
     leaf_count = fields.IntField()
-    unfinished_price = fields.FloatField()
-    finished_price = fields.FloatField()
+    unfinished_price = fields.StringField()
+    finished_price = fields.StringField()
     varient_code = fields.StringField()
     name = fields.StringField()
 
