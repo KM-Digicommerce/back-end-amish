@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1
+from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 from mongoengine import connect
 connect(
     db=MONGODB_COURSE_DB_NAME,
@@ -91,12 +91,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://54.81.5.153:3000"
+    front_end_ip
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "http://54.81.5.153:3000"
+    front_end_ip
 ]
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
