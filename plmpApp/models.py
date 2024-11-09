@@ -70,8 +70,8 @@ class products(Document):
     features = fields.StringField()
     attributes = fields.StringField()
     tags = fields.StringField()
-    msrp = fields.FloatField(default=0.0)
-    base_price = fields.FloatField(default=0.0)
+    msrp = fields.StringField()
+    base_price = fields.StringField()
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
 
@@ -101,3 +101,12 @@ class category_varient(Document):
 class capability(Document):
     action_name = fields.StringField()
     role_list = fields.ListField(fields.StringField(),default = [])
+
+
+class email_otp(Document):
+    email = fields.EmailField(unique=True)
+    otp = fields.StringField()
+    expires_at = fields.DateTimeField()
+
+    def __str__(self):
+        return f'OTP for {self.email}'

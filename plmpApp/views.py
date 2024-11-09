@@ -664,6 +664,7 @@ def productBulkUpdate(request):
 def productUpdate(request):
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
+    print(".",json_req['update_obj'])
     DatabaseModel.update_documents(products.objects,{'id':product_id},json_req['update_obj'])
     data = dict()
     data['is_updated'] = True
@@ -683,7 +684,94 @@ def varientBulkUpdate(request):
 def obtainAllVarientList(request):
     json_req = JSONParser().parse(request)
     product_id = ObjectId(json_req['product_id'])
-    return  product_id
+    pipeline = [
+    {
+            "$match":{'_id':product_id}
+        },
+         {
+            '$lookup': {
+                "from": 'product_varient',
+                "localField": 'options',
+                "foreignField": "_id",
+                "as": "product_varient_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+         {
+            '$lookup': {
+                "from": 'product_varient_option',
+                "localField": 'product_varient_ins.varient_option_id',
+                "foreignField": "_id",
+                "as": "product_varient_option_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_option_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+           {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'product_varient_option_ins.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'product_varient_option_ins.option_value_id',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":"$product_varient_ins._id",
+            "sku_number": { "$first": "$product_varient_ins.sku_number" },
+            "finished_price": { "$first": "$product_varient_ins.finished_price" },
+            "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
+            "quantity": { "$first": "$product_varient_ins.quantity" },
+            "image_url": { "$first": "$product_varient_ins.image_url" },
+            'varient_option_list': {
+                "$push": {
+                    'type_name': "$type_name.name",
+                    'type_value': "$type_value.name",
+                }
+            }
+        }
+    }, {
+            '$project': {
+                "_id": 0,
+                "sku_number":1,
+            "finished_price":1,
+            "un_finished_price":1,
+            "quantity": 1,
+            "image_url": 1,
+            'varient_option_list':1
+            }
+        }
+    ]
+    result = list(products.objects.aggregate(*pipeline))
+    return  result
 
 
 @csrf_exempt
@@ -1102,3 +1190,5 @@ def obtainDashboardCount(request):
     data['varent_list'] = result
 
     return data
+
+

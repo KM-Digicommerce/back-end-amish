@@ -2,7 +2,7 @@
 
 from django.urls import path
 from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount
-from .authentication import loginUser
+from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
     path('v1/', v1, name='v1'), 
@@ -33,7 +33,9 @@ urlpatterns = [
     path('obtainVarientForCategory/', obtainVarientForCategory, name='obtainVarientForCategory'),
     path('createVarientOption/', createVarientOption, name='createVarientOption'),
     path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName'),
-    path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount')
+    path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount'),
+    path('sendOtp/', sendOtp, name='sendOtp'),
+    path('resetPassword/', resetPassword, name='resetPassword'),
     
 
 ]
