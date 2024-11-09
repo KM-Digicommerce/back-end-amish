@@ -1102,3 +1102,5 @@ def obtainDashboardCount(request):
     data['varent_list'] = result
 
     return data
+
+
