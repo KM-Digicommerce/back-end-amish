@@ -70,8 +70,8 @@ class products(Document):
     features = fields.StringField()
     attributes = fields.StringField()
     tags = fields.StringField()
-    msrp = fields.FloatField(default=0.0)
-    base_price = fields.FloatField(default=0.0)
+    msrp = fields.StringField()
+    base_price = fields.StringField()
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
 
