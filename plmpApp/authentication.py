@@ -37,7 +37,6 @@ def loginUser(request):
         createCookies(token, response)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
-    print(">>>",response)
     return response
 
 
@@ -46,3 +45,61 @@ def logout(request):
     response = createJsonResponse(request)
     response.data['data']['status'] = 'logged out'
     return response
+
+
+import random
+import string
+from django.core.mail import send_mail
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render
+from datetime import datetime, timedelta
+from .models import email_otp 
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=6))  
+
+@csrf_exempt
+def sendOtp(request):
+    json_req = JSONParser().parse(request)
+    data = dict()
+    data['status'] = False
+    email = json_req.get('email')
+    if not email:
+        return  data
+    otp = generate_otp()
+    email_otp_obj = DatabaseModel.get_document(email_otp.objects,{'email':email})
+    if email_otp_obj:
+        DatabaseModel.delete_documents(email_otp.objects,{'email':email})
+    otp_record = email_otp.objects.create(
+        email=email,
+        otp=otp,
+        expires_at=datetime.now() + timedelta(minutes=5)
+    )
+    send_mail(
+        'Your OTP for password reset',
+        f'Your OTP is: {otp}',
+        settings.EMAIL_HOST_USER,
+        [email],
+        fail_silently=False,
+    )
+    data['status'] = True
+    print(data)
+    return JsonResponse(data,safe=False)
+
+@csrf_exempt
+
+def resetPassword(request):
+    json_req = JSONParser().parse(request)
+    otp = json_req.get('otp')
+    email = json_req.get('email')
+    new_password = json_req.get('newPassword')
+
+    otp_record = DatabaseModel.get_document(email_otp.objects,{'email':email,'otp':otp})
+    if otp_record:
+        if datetime.now() > otp_record.expires_at:
+            return JsonResponse({'error': 'OTP has expired'},safe=True)
+        otp_record.delete()
+        DatabaseModel.update_documents(user.objects,{'email':email},{'password':new_password})
+        return JsonResponse({'success': 'Password updated successfully'}, safe=True)
+    return JsonResponse({'error': 'Invalid OTP'},safe=True)

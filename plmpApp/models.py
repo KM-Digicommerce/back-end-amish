@@ -101,3 +101,12 @@ class category_varient(Document):
 class capability(Document):
     action_name = fields.StringField()
     role_list = fields.ListField(fields.StringField(),default = [])
+
+
+class email_otp(Document):
+    email = fields.EmailField(unique=True)
+    otp = fields.StringField()
+    expires_at = fields.DateTimeField()
+
+    def __str__(self):
+        return f'OTP for {self.email}'
