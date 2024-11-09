@@ -1,7 +1,7 @@
 
 
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount
 from .authentication import loginUser
 
 urlpatterns = [    
@@ -32,7 +32,8 @@ urlpatterns = [
     path('varientBulkUpdate/', varientBulkUpdate, name='varientBulkUpdate'),
     path('obtainVarientForCategory/', obtainVarientForCategory, name='obtainVarientForCategory'),
     path('createVarientOption/', createVarientOption, name='createVarientOption'),
-    path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName')
+    path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName'),
+    path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount')
     
 
 ]

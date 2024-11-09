@@ -304,7 +304,8 @@ def obtainCategoryAndSections(request):
         category_entry = {
             "_id": entry['_id'],
             "name": entry['name'],
-            "level_one_category_list": []  
+            "level_one_category_list": [] ,
+            "level_one_category_count": 0
         }
 
         level_two_map = {level_two['_id']: level_two for level_two in entry.get('level_two_category', [])}
@@ -313,7 +314,8 @@ def obtainCategoryAndSections(request):
             level_one_entry = {
                 "_id": level_one['_id'],
                 "name": level_one['name'],
-                "level_two_category_list": []  
+                "level_two_category_list": [] ,
+                 "level_two_category_count": 0 
             }
             for level_two_id in level_one.get('level_two_category_list', []):
                 level_two = level_two_map.get(level_two_id)
@@ -321,7 +323,9 @@ def obtainCategoryAndSections(request):
                     level_two_entry = {
                         "_id": level_two['_id'],
                         "name": level_two['name'],
-                        "level_three_category_list": []
+                        "level_three_category_list": [],
+                        "level_three_category_count": 0 
+
                     }
                     level_three_map = {level_three['_id']: level_three for level_three in entry.get('level_three_category', [])}
 
@@ -331,7 +335,9 @@ def obtainCategoryAndSections(request):
                             level_three_entry = {
                                 "_id": level_three['_id'],
                                 "name": level_three['name'],
-                                "level_four_category_list": [] 
+                                "level_four_category_list": [] ,
+                                "level_four_category_count": 0 
+
                             }
                             level_four_map = {level_four['_id']: level_four for level_four in entry.get('level_four_category', [])}
 
@@ -341,7 +347,9 @@ def obtainCategoryAndSections(request):
                                     level_four_entry = {
                                         "_id": level_four['_id'],
                                         "name": level_four['name'],
-                                        "level_five_category_list": [] 
+                                        "level_five_category_list": [] ,
+                                        "level_five_category_count": 0 
+
                                     }
                                     level_five_map = {level_five['_id']: level_five for level_five in entry.get('level_five_category', [])}
 
@@ -354,18 +362,43 @@ def obtainCategoryAndSections(request):
                                             }
                                             level_four_entry['level_five_category_list'].append(level_five_entry) 
                                     level_three_entry['level_four_category_list'].append(level_four_entry) 
+                                    level_four_entry['level_five_category_count'] = len(level_four_entry['level_five_category_list'])
+
                             level_two_entry['level_three_category_list'].append(level_three_entry) 
+                            level_three_entry['level_four_category_count'] = len(level_three_entry['level_four_category_list'])
+
                     level_one_entry['level_two_category_list'].append(level_two_entry) 
-
+                    level_two_entry['level_three_category_count'] = len(level_two_entry['level_three_category_list'])
             category_entry['level_one_category_list'].append(level_one_entry) 
-
+            level_one_entry['level_two_category_count'] = len(level_one_entry['level_two_category_list'])
         transformed_result.append(category_entry) 
-
+        category_entry['level_one_category_count'] = len(category_entry['level_one_category_list'])
     result = sorted(transformed_result, key=lambda x: x['_id'])
-
-
+    all_ids = []
+    category_list = DatabaseModel.list_documents(category.objects)
+    for category_obj in category_list:
+        for i in category_obj.level_one_category_list:
+            for j in i.level_two_category_list:
+                for k in j.level_three_category_list:
+                    for l in  k.level_four_category_list:
+                        for m in  l.level_five_category_list:
+                            all_ids.append(str(m.id))
+                        else:
+                            all_ids.append(str(l.id))
+                    else:
+                        all_ids.append(str(k.id))
+                else:
+                    all_ids.append(str(j.id))
+            else:
+                all_ids.append(str(i.id))
+        else:
+            all_ids.append(str(category_obj.id))
+    data = dict()
+    data['last_level_category'] = all_ids
     convert_object_ids_to_strings(result)  
-    return result
+    data['category_list'] = result
+    data['category_count'] = len(result)
+    return data
 
 
 @csrf_exempt
@@ -425,7 +458,6 @@ def obtainAllProductList(request):
                 all_ids.append(level_four_category_obj.id)
                 for m in  level_four_category_obj.level_five_category_list:
                     all_ids.append(m.id)
-        print(all_ids)
 
         category_obj = {"category_id":{'$in':[all_ids]}}
     else:
@@ -455,22 +487,36 @@ def obtainAllProductList(request):
                 "$push": {
                     'product_name': "$products.product_name",
                     'product_id': "$products._id",
-                    'url':"$products.ImageURL",
-                    "Manufacturer_name":"$products.Manufacturer_name",
-                    "tags":"$products.tags",
-                    "BasePrice":"$products.BasePrice",
-                    "Key_features":"$products.Key_features"
+                    'model':"$products.model",
+                    'upc_ean':"$products.upc_ean",
+                    'breadcrumb':"$products.breadcrumb",
+                    'brand_name':"$products.brand_name",
+                    'product_name':"$products.product_name",
+                    'long_description':"$products.long_description",
+                    'short_description':"$products.short_description",
+                    'features':"$products.features",
+                    'attributes':"$products.attributes",
+                    'tags':"$products.tags",
+                    'msrp':"$products.msrp",
+                    'base_price':"$products.base_price",
+                    'key_features':"$products.key_features",
                 }
             }
         }
     }
     ]
     result = list(product_category_config.objects.aggregate(*pipeline))
+    data = dict()
+    data['product_list'] = list()
+    data['product_count'] = 0
     if len(result)>0:
         result = result[0]
         del result['_id']
+        result['product_list']
         for j in result['product_list']:
             j['product_id'] = str(j['product_id']) if 'product_id'in j else ""
+        data['product_list'] = result['product_list']
+        data['product_count'] = len(result['product_list'])
     return  result
 
 
@@ -579,11 +625,19 @@ def obtainProductDetails(request):
                 "$first": {
                     'product_name': "$product_name",
                     'product_id': "$_id",
-                    'ImageURL':"$ImageURL",
-                    "Manufacturer_name":"$Manufacturer_name",
-                    "tags":"$tags",
-                    "BasePrice":"$BasePrice",
-                    "Key_features":"$Key_features"
+                    'model':"$model",
+                    'upc_ean':"$upc_ean",
+                    'breadcrumb':"$breadcrumb",
+                    'brand_name':"$brand_name",
+                    'product_name':"$product_name",
+                    'long_description':"$long_description",
+                    'short_description':"$short_description",
+                    'features':"$features",
+                    'attributes':"$attributes",
+                    'tags':"$tags",
+                    'msrp':"$msrp",
+                    'base_price':"$base_price",
+                    'key_features':"$key_features",
                 }
             }
         }
@@ -594,7 +648,7 @@ def obtainProductDetails(request):
         result = result[0]
         del result['_id']
         result['product_obj']['product_id'] = str(result['product_obj']['product_id'])
-        result['product_obj']['ImageURL'] = result['product_obj']['ImageURL'][0] if len(result['product_obj']['ImageURL']) >0 else ""
+        # result['product_obj']['ImageURL'] = result['product_obj']['ImageURL'][0] if len(result['product_obj']['ImageURL']) >0 else ""
     return  result
 
 def productBulkUpdate(request):
@@ -840,7 +894,6 @@ def retrieveData(request):
 @csrf_exempt
 def obtainVarientForCategory(request):
     category_id = request.GET.get("id")
-    print(category_id)
     pipeline = [
         {
             "$match":{'category_id':category_id}
@@ -964,4 +1017,88 @@ def createValueForVarientName(request):
     DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id},{'add_to_set__option_value_id_list':type_value_id})
     data = dict()
     data['is_created'] = True
+    return data
+
+def obtainDashboardCount(request):
+    data = dict()
+    data['total_product'] = DatabaseModel.count_documents(products.objects,{})
+    data['total_brand'] = 0
+    last_all_ids = []
+    category_list = DatabaseModel.list_documents(category.objects)
+    for category_obj in category_list:
+        if len(category_obj.level_one_category_list)>0:
+            for i in category_obj.level_one_category_list:
+                if len(i.level_two_category_list)>0:
+                    for j in i.level_two_category_list:
+                        if len(j.level_three_category_list)>0:
+                            for k in j.level_three_category_list:
+                                if len(k.level_four_category_list)>0:
+                                    for l in  k.level_four_category_list:
+                                        if len(l.level_five_category_list)>0:
+                                            for m in  l.level_five_category_list:
+                                                last_all_ids.append({'id':m.id,'name':m.name})
+                                        else:
+                                            last_all_ids.append({'id':l.id,'name':l.name})
+                                else:
+                                    last_all_ids.append({'id':k.id,'name':k.name})
+                        else:
+                            last_all_ids.append({'id':j.id,'name':j.name})
+                else:
+                    last_all_ids.append({'id':i.id,'name':i.name})
+        else:
+            last_all_ids.append({'id':category_obj.id,'name':category_obj.name})
+    data['category_project_dict'] = dict()
+    for i in last_all_ids:
+        data['category_project_dict'][i['name']] = DatabaseModel.count_documents(product_category_config.objects,{'category_id':str(i['id'])})
+    data['total_last_level_category'] = len(last_all_ids)
+    data['total_parent_level_category'] = len(category_list)
+    pipeline = [
+            
+        {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'option_value_id_list',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+        '$group': {
+            "_id":"$type_name._id",
+            "type_name":{'$first':"$type_name.name"},
+            'option_value_list': {
+                "$push":  "$type_value.name",
+            }
+        }
+        },{
+        '$project':{
+            "_id":0,
+            "type_name":1,
+            'option_value_count': {'$size':'$option_value_list'},
+
+        }
+        }
+        ]
+    result = list(varient_option.objects.aggregate(*pipeline))
+    data['varent_list'] = result
+
     return data
