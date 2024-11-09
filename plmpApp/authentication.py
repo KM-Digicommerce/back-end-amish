@@ -84,7 +84,6 @@ def sendOtp(request):
         fail_silently=False,
     )
     data['status'] = True
-    print(data)
     return JsonResponse(data,safe=False)
 
 @csrf_exempt
@@ -94,7 +93,6 @@ def resetPassword(request):
     otp = json_req.get('otp')
     email = json_req.get('email')
     new_password = json_req.get('newPassword')
-
     otp_record = DatabaseModel.get_document(email_otp.objects,{'email':email,'otp':otp})
     if otp_record:
         if datetime.now() > otp_record.expires_at:
