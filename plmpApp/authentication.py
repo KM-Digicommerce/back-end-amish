@@ -35,6 +35,7 @@ def loginUser(request):
         valid = True
         response = createJsonResponse(request, token)
         createCookies(token, response)
+        response.data['data']['user_login_id'] = str(user_data_obj.id)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
     return response
