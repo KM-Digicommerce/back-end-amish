@@ -10,6 +10,10 @@ urlpatterns = [
     path('list-users/', create_user, name='list_users'),
     #create
     path('loginUser/', loginUser, name='loginUser'), 
+    path('sendOtp/', sendOtp, name='sendOtp'),
+    path('resetPassword/', resetPassword, name='resetPassword'),
+
+    
     path('createCategory1/', createCategory1, name='createCategory1'), 
     path('createCategory2/', createCategory2, name='createCategory2'), 
     path('createCategory3/', createCategory3, name='createCategory3'), 
@@ -34,8 +38,7 @@ urlpatterns = [
     path('createVarientOption/', createVarientOption, name='createVarientOption'),
     path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName'),
     path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount'),
-    path('sendOtp/', sendOtp, name='sendOtp'),
-    path('resetPassword/', resetPassword, name='resetPassword'),
+    
     
 
 ]

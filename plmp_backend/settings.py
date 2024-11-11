@@ -43,7 +43,10 @@ CORS_ORIGIN_WHITELIST = ['*']
 # CORS_ALLOWED_ORIGINS = ["http://192.168.1.10:3000"]
 
 # settings.py
-
+CORS_ALLOW_HEADERS = [
+    'user-login-id',
+    'content-type',
+]
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST =  'smtp.gmail.com'
 EMAIL_PORT = 587

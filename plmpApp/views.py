@@ -374,27 +374,32 @@ def obtainCategoryAndSections(request):
         transformed_result.append(category_entry) 
         category_entry['level_one_category_count'] = len(category_entry['level_one_category_list'])
     result = sorted(transformed_result, key=lambda x: x['_id'])
-    all_ids = []
+    last_all_ids = []
     category_list = DatabaseModel.list_documents(category.objects)
     for category_obj in category_list:
-        for i in category_obj.level_one_category_list:
-            for j in i.level_two_category_list:
-                for k in j.level_three_category_list:
-                    for l in  k.level_four_category_list:
-                        for m in  l.level_five_category_list:
-                            all_ids.append(str(m.id))
+        if len(category_obj.level_one_category_list)>0:
+            for i in category_obj.level_one_category_list:
+                if len(i.level_two_category_list)>0:
+                    for j in i.level_two_category_list:
+                        if len(j.level_three_category_list)>0:
+                            for k in j.level_three_category_list:
+                                if len(k.level_four_category_list)>0:
+                                    for l in  k.level_four_category_list:
+                                        if len(l.level_five_category_list)>0:
+                                            for m in  l.level_five_category_list:
+                                                last_all_ids.append({'id':str(m.id),'name':m.name})
+                                        else:
+                                            last_all_ids.append({'id':str(l.id),'name':l.name})
+                                else:
+                                    last_all_ids.append({'id':str(k.id),'name':k.name})
                         else:
-                            all_ids.append(str(l.id))
-                    else:
-                        all_ids.append(str(k.id))
+                            last_all_ids.append({'id':str(j.id),'name':j.name})
                 else:
-                    all_ids.append(str(j.id))
-            else:
-                all_ids.append(str(i.id))
+                    last_all_ids.append({'id':str(i.id),'name':i.name})
         else:
-            all_ids.append(str(category_obj.id))
+            last_all_ids.append({'id':str(category_obj.id),'name':category_obj.name})
     data = dict()
-    data['last_level_category'] = all_ids
+    data['last_level_category'] = last_all_ids
     convert_object_ids_to_strings(result)  
     data['category_list'] = result
     data['category_count'] = len(result)
@@ -517,7 +522,7 @@ def obtainAllProductList(request):
             j['product_id'] = str(j['product_id']) if 'product_id'in j else ""
         data['product_list'] = result['product_list']
         data['product_count'] = len(result['product_list'])
-    return  result
+    return data
 
 
 import math
@@ -665,6 +670,8 @@ def productUpdate(request):
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
     print(".",json_req['update_obj'])
+    json_req['update_obj']['base_price'] = str(json_req['update_obj']['base_price'])
+    json_req['update_obj']['msrp'] = str(json_req['update_obj']['msrp'])
     DatabaseModel.update_documents(products.objects,{'id':product_id},json_req['update_obj'])
     data = dict()
     data['is_updated'] = True

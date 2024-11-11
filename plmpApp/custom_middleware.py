@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from django.http import JsonResponse
 from .global_service import DatabaseModel
-from .models import ignore_calls,capability
+from .models import ignore_calls,capability,user
 from plmp_backend.env import SIMPLE_JWT
 import jwt
 from rest_framework import status
@@ -104,6 +104,7 @@ def check_role_and_capability(request,role_name):
     action = path[2] if len(path) >=3 else None
     is_accessible = False
     capability_obj = DatabaseModel.get_document(capability.objects, {"action_name":action, "role_list__in" : [role_name]})
+    print(capability_obj)
     if capability_obj != None:
         is_accessible = True 
     return is_accessible
@@ -128,51 +129,54 @@ class CustomMiddleware:
             return createJsonResponse1(data=res)
         else:
             return createJsonResponse1(message='Unexpected response type', status=False)
-    # @skip_for_paths()
-    # def __call__(self, request):
-    #     response = createJsonResponse(request)
-    #     try:
-    #         print(">>>>>",request.COOKIES)
-    #         jwtObj = check_authentication(request)
-    #         if jwtObj != None:
-    #             refresh_cookies(request, response)
-    #             if check_role_and_capability(request, jwtObj["role_name"]):
-    #                 res = self.get_response(request)
-    #                 user_obj = obtainUserObjFromToken(request)
-    #                 if isinstance(res, Response):
-    #                     response.data['data'] = res.data
-    #                     if isinstance(res.data, dict):
-    #                         if res.data.get('STATUS_CODE') == 401:
-    #                             response.status_code = status.HTTP_401_UNAUTHORIZED
-    #                 else:
-    #                     response.data['data'] = res
-    #                     if isinstance(res, dict):
-    #                         if res.get('STATUS_CODE') == 401:
-    #                             response.status_code = status.HTTP_401_UNAUTHORIZED
-    #             else:
-    #                 response.status_code = status.HTTP_401_UNAUTHORIZED
-    #         else:
-    #             response.status_code = status.HTTP_401_UNAUTHORIZED
-    #             response.data['message'] = 'Invalid token'
-    #     except Exception as e:
-    #         print("Exception Class --", e.__class__)
-    #         print("Exception Class name --", e.__class__.__name__)
-    #         print("Exception --")
-    #         print(e)
-    #         response.data['data'] = False
-    #         if (e.__class__.__name__ == 'ExpiredSignatureError' or e.__class__.__name__ == 'DecodeError'):
-    #             response.status_code = status.HTTP_401_UNAUTHORIZED
-    #             response.data['message'] = 'Invalid token'
-    #         elif e.__class__.__name__ == 'ValidationError':
-    #             print(str(e))
-    #             print(e.message)
-    #         else:
-    #             response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    #     response.accepted_renderer = JSONRenderer()
-    #     response.accepted_media_type = "application/json"
-    #     response.renderer_context = {}
-    #     response.render()
-    #     return response
+    @skip_for_paths()
+    def __call__(self, request):
+        response = createJsonResponse(request)
+        try:
+            # jwtObj = check_authentication(request)
+            user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
+            print(user_login_id)
+            user_login_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
+            print(">>>>>>>>>>",user_login_obj.role)
+            role = user_login_obj.role
+            if user_login_obj != None:
+                # refresh_cookies(request, response)
+                if check_role_and_capability(request, role):
+                    res = self.get_response(request)
+                    if isinstance(res, Response):
+                        response.data['data'] = res.data
+                        if isinstance(res.data, dict):
+                            if res.data.get('STATUS_CODE') == 401:
+                                response.status_code = status.HTTP_401_UNAUTHORIZED
+                    else:
+                        response.data['data'] = res
+                        if isinstance(res, dict):
+                            if res.get('STATUS_CODE') == 401:
+                                response.status_code = status.HTTP_401_UNAUTHORIZED
+                else:
+                    response.status_code = status.HTTP_401_UNAUTHORIZED
+            else:
+                response.status_code = status.HTTP_401_UNAUTHORIZED
+                response.data['message'] = 'Invalid token'
+        except Exception as e:
+            print("Exception Class --", e.__class__)
+            print("Exception Class name --", e.__class__.__name__)
+            print("Exception --")
+            print(e)
+            response.data['data'] = False
+            if (e.__class__.__name__ == 'ExpiredSignatureError' or e.__class__.__name__ == 'DecodeError'):
+                response.status_code = status.HTTP_401_UNAUTHORIZED
+                response.data['message'] = 'Invalid token'
+            elif e.__class__.__name__ == 'ValidationError':
+                print(str(e))
+                print(e.message)
+            else:
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        response.accepted_renderer = JSONRenderer()
+        response.accepted_media_type = "application/json"
+        response.renderer_context = {}
+        response.render()
+        return response
 
 
 def createCookies(token,response):
