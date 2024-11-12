@@ -15,6 +15,7 @@ urlpatterns = [
 
     
     path('createCategory1/', createCategory1, name='createCategory1'), 
+    path('createCategory/', createCategory, name='createCategory'), 
     path('createCategory2/', createCategory2, name='createCategory2'), 
     path('createCategory3/', createCategory3, name='createCategory3'), 
     path('createCategory4/', createCategory4, name='createCategory4'), 
