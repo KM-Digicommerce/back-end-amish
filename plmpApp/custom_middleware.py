@@ -11,7 +11,7 @@ def check_ignore_authentication_for_url(request):
     try:
         action = path[2] 
     except IndexError:
-        return False 
+        return False
     print(action)
     result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name": action})
     return result_obj is not None  
@@ -104,7 +104,6 @@ def check_role_and_capability(request,role_name):
     action = path[2] if len(path) >=3 else None
     is_accessible = False
     capability_obj = DatabaseModel.get_document(capability.objects, {"action_name":action, "role_list__in" : [role_name]})
-    print(capability_obj)
     if capability_obj != None:
         is_accessible = True 
     return is_accessible
@@ -113,22 +112,6 @@ def check_role_and_capability(request,role_name):
 class CustomMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-
-    @skip_for_paths()
-    def __call__(self, request):
-        res = self.get_response(request) 
-        if isinstance(res, JsonResponse):
-            return res
-        
-        # return createJsonResponse(res)
-        if isinstance(res, dict):
-            return createJsonResponse1(data=res)
-        elif isinstance(res, str):
-            return createJsonResponse1(message=res)
-        elif isinstance(res, list):
-            return createJsonResponse1(data=res)
-        else:
-            return createJsonResponse1(message='Unexpected response type', status=False)
     @skip_for_paths()
     def __call__(self, request):
         response = createJsonResponse(request)
