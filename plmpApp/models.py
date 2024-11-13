@@ -61,7 +61,7 @@ class product_varient(Document):
 class products(Document):
     model = fields.StringField()
     # mpn = fields.StringField(required=True)
-    upc_ean = fields.StringField()
+    upc_ean = fields.StringField(default = "")
     breadcrumb = fields.StringField()
     brand_name = fields.StringField()
     product_name = fields.StringField()
@@ -70,8 +70,8 @@ class products(Document):
     features = fields.StringField()
     attributes = fields.StringField()
     tags = fields.StringField()
-    msrp = fields.StringField()
-    base_price = fields.StringField()
+    msrp = fields.StringField(default = "")
+    base_price = fields.StringField(default = "")
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
 

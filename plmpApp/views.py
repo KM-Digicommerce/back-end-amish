@@ -128,15 +128,68 @@ def createProduct(request):
         "key_features":product_obj['key_features']
     }
     products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
+    all_ids = ""
+    if category_name == "level-1":
+        category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
+        if category_obj:
+            all_ids = category_obj.name
+            for i in category_obj.level_one_category_list:
+                all_ids = all_ids  + ">"+ i.name 
+                for j in i.level_two_category_list:
+                    all_ids = all_ids + ">"+ j.name 
+                    for k in j.level_three_category_list:
+                        all_ids = all_ids + ">"+ k.name
+                        for l in  k.level_four_category_list:
+                            all_ids = all_ids + ">"+ l.name 
+                            for m in  l.level_five_category_list:
+                                all_ids = all_ids + ">"+ m.name 
+    elif  category_name == "level-2":
+        level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
+        if level_one_category_obj:
+            all_ids = level_one_category_obj.name
+            for j in i.level_two_category_list:
+                all_ids = all_ids + ">"+ j.name 
+                for k in j.level_three_category_list:
+                    all_ids = all_ids + ">"+ k.name
+                    for l in  k.level_four_category_list:
+                        all_ids = all_ids + ">"+ l.name 
+                        for m in  l.level_five_category_list:
+                            all_ids = all_ids + ">"+ m.name 
+
+    elif  category_name == "level-3":
+        level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
+        if level_two_category_obj:
+            all_ids = level_two_category_obj.name
+            for k in j.level_three_category_list:
+                all_ids = all_ids + ">"+ k.name
+                for l in  k.level_four_category_list:
+                    all_ids = all_ids + ">"+ l.name 
+                    for m in  l.level_five_category_list:
+                        all_ids = all_ids + ">"+ m.name
+    elif  category_name == "level-4":
+        level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
+        if level_three_category_obj:
+            all_ids = level_three_category_obj.name
+            for l in  k.level_four_category_list:
+                all_ids = all_ids + ">"+ l.name 
+                for m in  l.level_five_category_list:
+                    all_ids = all_ids + ">"+ m.name
+    elif  category_name == "level-5":
+        level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
+        if level_four_category_obj:
+            all_ids = level_three_category_obj.name
+            for m in  l.level_five_category_list:
+                all_ids = all_ids + ">"+ m.name
     for z in product_obj['varients']:
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":z['finished_price'],"un_finished_price":z['un_finished_price'],"quantity":z['quantity']})
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
         DatabaseModel.update_documents(products.objects,{"id":products_obj_1.id},{"add_to_set__options":product_varient_obj.id})
-    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj_1.id,'category_level':category_name,"category_id":category_id})
+    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj_1.id,'category_level':all_ids,"category_id":category_id})
     data = dict()
-    data['is_created'] = True
+    data['status'] = True
+    
     return data
 
 
@@ -505,6 +558,7 @@ def obtainAllProductList(request):
                     'msrp':"$products.msrp",
                     'base_price':"$products.base_price",
                     'key_features':"$products.key_features",
+                    'image':"$products.image",
                 }
             }
         }
@@ -542,77 +596,110 @@ def upload_file(request):
             return data
     except Exception as e:
         return data
-    l = list()
     for i in range(len(df)):
+        print(i)
         row_dict = df.iloc[i].to_dict()
-        Handle = row_dict['Handle']
-        Title = row_dict['Title']
-        Vendor = row_dict['Vendor']
-        category_string = row_dict['Product Category']
-        Tags = row_dict['Tags']
-        KeyFeatures = row_dict['Key Features (product.metafields.custom.key_features1)']
-        options = []
-        product_image = row_dict['Image Src']
-        if isinstance(Title, str) == False:
-            is_varient = True
-        else:
-            is_varient = False
-            option_name_list = list()
-        option_number = 1
-        while f'Option{option_number} Name' in row_dict and f'Option{option_number} Value' in row_dict:
-            option_name = row_dict[f'Option{option_number} Name']
-            option_value = row_dict[f'Option{option_number} Value']
-            if is_varient:
-                option_name = option_name_list[option_number-1]
+        if not pd.isna(row_dict.get("Variant SKU")):
+            print(">>123")
+            model = None if isinstance(row_dict.get("model"), float) and math.isnan(row_dict.get("model")) else row_dict.get("model")
+            upc_ean = None if isinstance(row_dict.get("upc_ean"), float) and math.isnan(row_dict.get("upc_ean")) else row_dict.get("upc_ean")
+            product_name = None if isinstance(row_dict.get("product_name"), float) and math.isnan(row_dict.get("product_name")) else row_dict.get("product_name")
+            long_description = None if isinstance(row_dict.get("long_description"), float) and math.isnan(row_dict.get("long_description")) else row_dict.get("long_description")
+            short_description = None if isinstance(row_dict.get("short_description"), float) and math.isnan(row_dict.get("short_description")) else row_dict.get("short_description")
+            brand = None if isinstance(row_dict.get("brand"), float) and math.isnan(row_dict.get("brand")) else row_dict.get("brand")
+            breadcrumb = None if isinstance(row_dict.get("breadcrumb"), float) and math.isnan(row_dict.get("breadcrumb")) else row_dict.get("breadcrumb")
+            msrp = None if isinstance(row_dict.get("msrp"), float) and math.isnan(row_dict.get("msrp")) else row_dict.get("msrp")
+            base_price = None if isinstance(row_dict.get("base_price"), float) and math.isnan(row_dict.get("base_price")) else row_dict.get("base_price")
+            Tags = None if isinstance(row_dict.get("Tags"), float) and math.isnan(row_dict.get("Tags")) else row_dict.get("Tags")
+            Variant_SKU = None if isinstance(row_dict.get("Variant SKU"), float) and math.isnan(row_dict.get("Variant SKU")) else row_dict.get("Variant SKU")
+            Un_Finished_Price = None if isinstance(row_dict.get("Un Finished Price"), float) and math.isnan(row_dict.get("Un Finished Price")) else row_dict.get("Un Finished Price")
+            Finished_Price = None if isinstance(row_dict.get("Finished Price"), float) and math.isnan(row_dict.get("Finished Price")) else row_dict.get("Finished Price")
+            img_src = None if isinstance(row_dict.get("Image Src"), float) and math.isnan(row_dict.get("Image Src")) else row_dict.get("Image Src")
+            image_position = None if isinstance(row_dict.get("Image Position"), float) and math.isnan(row_dict.get("Image Position")) else row_dict.get("Image Position")
+            key_features = None if isinstance(row_dict.get("Key Features"), float) and math.isnan(row_dict.get("Key Features")) else row_dict.get("Key Features")
+            stockv = None if isinstance(row_dict.get("stockv"), float) and math.isnan(row_dict.get("stockv")) else row_dict.get("stockv")
+            category_level = None if isinstance(row_dict.get("category level"), float) and math.isnan(row_dict.get("category level")) else row_dict.get("category level")
+            options = []
+            if isinstance(model, str) == False:
+                is_varient = True
             else:
-                option_name_list.append(option_name)
-            if isinstance(option_name, str) :
-                options.append({"name":option_name,"value": option_value})
-            option_number += 1
-        product_obj = DatabaseModel.get_document(products.objects,{"Handle":Handle})
-        if product_obj==None:
-            category_list = []
-            if isinstance(category_string, str):
-                category_list = [item.strip() for item in category_string.split('>')]
-            product_type_obj = DatabaseModel.get_document(product_type.objects,{"name":category_list[2]})
-            if product_type_obj== None:
-                product_type_obj = DatabaseModel.save_documents(product_type,{'name':category_list[2]})
-            section_obj = DatabaseModel.get_document(section.objects,{"name":category_list[1]})
-            if section_obj== None:
-                section_obj = DatabaseModel.save_documents(section,{'name':category_list[1],'product_type_list':[product_type_obj.id]})
-            category_obj = DatabaseModel.get_document(category.objects,{"name":category_list[0]})
-            if category_obj== None:
-                category_obj = DatabaseModel.save_documents(category,{'name':category_list[0],'section_list':[section_obj.id]})
-            if product_obj == None:
-                product_obj = DatabaseModel.save_documents(products,{'product_name':Title,"Handle":Handle,"product_type_id":product_type_obj.id,"Manufacturer_name":Vendor,"tags":Tags,"Key_features":KeyFeatures,"ImageURL":[product_image]})
+                is_varient = False
+            option_name_list = list()
+            option_number = 1
+            while f'Option{option_number} Name' in row_dict and f'Option{option_number} Value' in row_dict:
+                option_name = row_dict[f'Option{option_number} Name']
+                option_value = row_dict[f'Option{option_number} Value']
+                if is_varient:
+                    option_name = option_name_list[option_number-1]
+                else:
+                    option_name_list.append(option_name)
+                if isinstance(option_name, str) :
+                    options.append({"name":option_name,"value": option_value})
+                option_number += 1
+            product_obj = DatabaseModel.get_document(products.objects,{"model":model})
+            if product_obj==None:
+                category_list = []
+                if isinstance(category_level, str):
+                    category_list = [item.strip() for item in category_level.split('>')]
+                previous_category_id = ""
+                for index,i in enumerate(category_list):
+                    if index == 0:
+                        category_obj = DatabaseModel.get_document(category.objects,{'name':i})
+                        if category_obj == None:
+                            category_obj = DatabaseModel.save_documents(category,{'name':i})
+                        previous_category_id = category_obj.id
+                    if index == 1:
+                        level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':i})
+                        if level_one_category_obj == None:
+                            level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':i})
+                        DatabaseModel.update_documents(category.objects,{"id":previous_category_id},{"push__level_one_category_list":level_one_category_obj.id})
+                        previous_category_id = level_one_category_obj.id
+                    if index == 2:
+                        level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':i})
+                        if level_two_category_obj == None:
+                            level_two_category_obj = DatabaseModel.save_documents(level_two_category,{'name':i})
+                        DatabaseModel.update_documents(level_one_category.objects,{"id":previous_category_id},{"push__level_two_category_list":level_two_category_obj.id})
+                        previous_category_id = level_two_category_obj.id
+                    if index == 3:
+                        level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':i})
+                        if level_three_category_obj == None:
+                            level_three_category_obj = DatabaseModel.save_documents(level_three_category,{'name':i})
+                        DatabaseModel.update_documents(level_two_category.objects,{"id":previous_category_id},{"push__level_three_category_list":level_three_category_obj.id})
+                        previous_category_id = level_three_category_obj.id
+                    if index == 4:
+                        level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':i})
+                        if level_four_category_obj == None:
+                            level_four_category_obj = DatabaseModel.save_documents(level_four_category,{'name':i})
+                        DatabaseModel.update_documents(level_three_category.objects,{"id":previous_category_id},{"push__level_four_category_list":level_four_category_obj.id})
+                        previous_category_id = level_four_category_obj.id
+                    if index == 5:
+                        level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':i})
+                        if level_five_category_obj == None:
+                            level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':i})
+                        DatabaseModel.update_documents(level_four_category.objects,{"id":previous_category_id},{"push__level_five_category_list":level_five_category_obj.id})
+                        previous_category_id = level_five_category_obj.id
+                product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name,"long_description":long_description,"short_description":short_description,"brand_name":brand,"breadcrumb":breadcrumb,"msrp":str(msrp),"base_price":str(base_price),"key_features":key_features,'tags':Tags})
+                product_id = product_obj.id
+                product_category_config_obj = DatabaseModel.save_documents(product_category_config,{'product_id':product_id,'category_level':category_level,"category_id":str(previous_category_id)})
+            else:
+                product_id = product_obj.id 
+            product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":Finished_Price,"un_finished_price":Un_Finished_Price,"quantity":stockv,'image_url':[img_src]})
+            for i in options:
+                type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':i['name']})
+                if type_name_obj ==None:
+                    type_name_obj = DatabaseModel.save_documents(type_name,{'name':i['name']})   
+                type_name_id = type_name_obj.id
+                type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':i['value']})
+                if type_value_obj ==None:
+                    type_value_obj = DatabaseModel.save_documents(type_value,{'name':i['value']})   
+                type_value_id = type_value_obj.id
+                product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":type_name_id,"option_value_id":type_value_id})
+                DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
+            DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
         else:
-            if isinstance(product_image, str):
-                DatabaseModel.update_documents(products.objects,{"id":product_obj.id},{"push__ImageURL":product_image})
-        varient_sku = row_dict['Variant SKU']
-        variant_Price = row_dict['Variant Price']
-        Variants_opt_id_list = list()
-        for i in options:
-            option_value_id = ""
-            # if i['name'] =="Wood Type":
-            #     # wood_type_obj = DatabaseModel.get_document(wood_type.objects,{"name":i['value']})
-            #     if wood_type_obj:
-            #         option_value_id = wood_type_obj.id
-            #     else:
-            #         # wood_type_obj = DatabaseModel.save_documents(wood_type,{'name':i['value']})
-            #         option_value_id = wood_type_obj.id
-            # if i['name'] =="Size":
-            #     # size_option_obj = DatabaseModel.get_document(size_option.objects,{"name":i['value']})
-            #     if size_option_obj:
-            #         option_value_id = size_option_obj.id
-            #     else:
-            #         # size_option_obj = DatabaseModel.save_documents(size_option,{'name':i['value']})
-            #         option_value_id = size_option_obj.id
-            Variants_opt_obj = DatabaseModel.save_documents(varient_option,{'varient_count':0,"option_name":i['name'],'option_value_id':str(option_value_id)})
-            Variants_opt_id_list.append(Variants_opt_obj.id)
-    #     if isinstance(product_image, str):
-    #         DatabaseModel.save_documents(Variants,{'product_id':product_obj.id,"options":Variants_opt_id_list,"varient_sku":varient_sku,"unfinished_price":0,"finished_price":variant_Price,"image_url":product_image})
-    # data['status'] = True
-    return data 
+            print(">>>",1)
+    data['status'] = True
+    return data
 
 
 @csrf_exempt
@@ -643,6 +730,7 @@ def obtainProductDetails(request):
                     'msrp':"$msrp",
                     'base_price':"$base_price",
                     'key_features':"$key_features",
+                    'image':"$image",
                 }
             }
         }
@@ -654,6 +742,9 @@ def obtainProductDetails(request):
         del result['_id']
         result['product_obj']['product_id'] = str(result['product_obj']['product_id'])
         # result['product_obj']['ImageURL'] = result['product_obj']['ImageURL'][0] if len(result['product_obj']['ImageURL']) >0 else ""
+        product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{"product_id":str(result['product_obj']['product_id'])})
+        result['category_id'] = product_category_config_obj.category_id
+        result['category_name'] = product_category_config_obj.category_level
     return  result
 
 def productBulkUpdate(request):
@@ -781,158 +872,187 @@ def obtainAllVarientList(request):
     return  result
 
 
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from openpyxl import Workbook
+from io import BytesIO
+
 @csrf_exempt
 def exportAll(request):
     pipeline = [
         {
             '$lookup': {
-                "from": 'products',
-                "localField": 'product_id',
-                "foreignField": "_id",
-                "as": "product_ins"
-            }
-        },
-        {
-            '$unwind': {
-                'path': '$product_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        }, 
-        {
-            '$lookup': {
-                "from": 'product_type',
-                "localField": 'product_ins.product_type_id',
-                "foreignField": "_id",
-                "as": "product_type_ins"
-            }
-        },
-        {
-            '$unwind': {
-                'path': '$product_type_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        }, {
-            '$lookup': {
-                "from": 'section',
-                "localField": 'product_type_ins._id',
-                "foreignField": "product_type_list",
-                "as": "section_ins"
-            }
-        },
-        {
-            '$unwind': {
-                'path': '$section_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        }, {
-            '$lookup': {
-                "from": 'category',
-                "localField": 'section_ins._id',
-                "foreignField": "section_list",
-                "as": "category_ins"
-            }
-        },
-        {
-            '$unwind': {
-                'path': '$category_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        }, {
-            '$lookup': {
-                "from": 'varient_option',
+                "from": 'product_varient',
                 "localField": 'options',
                 "foreignField": "_id",
-                "as": "varient_option_ins"
+                "as": "product_varient_ins"
             }
         },
-   {
-            "$group": {
-                "_id": "$_id",
-                "Variant SKU": { "$first": "$varient_sku" },
-                "Variant Price": { "$first": "$finished_price" },
-                "Image Src": { "$first": "$ImageURL" },
-                "Handle": { "$first": "$product_ins.Handle" },
-                "Title": { "$first": "$product_ins.product_name" },
-                "Manufacturer_name": { "$first": "$product_ins.Manufacturer_name" },
-                "Tags": { "$first": "$product_ins.tags" },
-                "Key_features": { "$first": "$product_ins.Key_features" },
-                "Product Category": {
-            "$first": {
-                "$concat": [
-                    "$category_ins.name", " > ", "$section_ins.name", " > ", "$product_type_ins.name"
-                ]
+        {'$unwind': {'path': '$product_varient_ins', 'preserveNullAndEmptyArrays': True}},
+        {
+            '$lookup': {
+                "from": 'product_category_config',
+                "localField": '_id',
+                "foreignField": "product_id",
+                "as": "product_category_config_ins"
             }
         },
-                "options": {
-                    "$push": {
-                        "$map": {
-                            "input": "$varient_option_ins",
-                            "as": "option",
-                            "in": {
-                                "option_name": "$$option.option_name",
-                                "option_value": "$$option.option_value"
-                            }
-                        }
-                    }
-                }
+        {'$unwind': {'path': '$product_category_config_ins', 'preserveNullAndEmptyArrays': True}},
+        {
+            '$lookup': {
+                'from': 'product_varient_option',
+                'localField': 'product_varient_ins.varient_option_id',
+                'foreignField': '_id',
+                'as': 'product_varient_option_ins'
             }
+        },
+        {'$unwind': {'path': '$product_varient_option_ins', 'preserveNullAndEmptyArrays': True}},{
+        '$lookup': {
+            'from': 'product_varient_option',
+            'localField': 'product_varient_ins.varient_option_id',
+            'foreignField': '_id',
+            'as': 'product_varient_option_ins'
+        }
         },  {
+            '$unwind': {
+                'path': '$product_varient_option_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'product_varient_option_ins.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'product_varient_option_ins.option_value_id',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+       {
+            "$group": {
+                "_id": "$product_varient_ins._id",
+                "model":{ "$first":"$model"},
+                "upc_ean":{ "$first":"$upc_ean"},
+                "product_name":{ "$first":"$product_name"},
+                "category level":{ "$first":"$product_category_config_ins.category_level"},
+                "long_description":{ "$first":"$long_description"},
+                "short_description":{ "$first":"$short_description"}, 
+                "brand":{ "$first":"$brand"},
+                "breadcrumb":{ "$first":"$breadcrumb"},
+                "msrp":{ "$first":"$msrp"},
+                "base_price":{ "$first":"$base_price"},
+                "Tags":{ "$first":"$tags"}, 
+                "Variant SKU":{ "$first":"$product_varient_ins.sku_number"},
+                "Un Finished Price":{ "$first":"$product_varient_ins.un_finished_price"},
+                "Finished Price":{ "$first":"$product_varient_ins.finished_price"},
+                "Image Src":{ "$first":"$product_varient_ins.image_url"},
+                "Key Features":{ "$first":"$key_features"},
+                "stockv":{ "$first":"$product_varient_ins.quantity"},
+                "varient_option":{'$push':{'name':"$type_name.name","value":"$type_value.name"}}
+        }
+    } , {
             '$project': {
                 "_id": 0,
-                "Variant SKU": 1,
-                "Variant Price": 1,
-                "Image Src": 1, 
-                "Handle": 1,
-                "Title": 1,
-                "Vendor": 1,
-                "Tags": 1,
-                "Key_features": 1,
-                "options":1,
-                "Product Category":1
+                "model":1,
+                "upc_ean":1,
+                "category level":1,
+                "product_name":1,
+                "long_description":1,
+                "short_description":1, 
+                "brand":1,
+                "breadcrumb":1,
+                "msrp":1,
+                "base_price":1,
+                "Tags":1, 
+                "Variant SKU":1,
+                "Un Finished Price":1,
+                "Finished Price":1,
+                "Image Src":1, 
+                "Image Position":1,
+                "Key Features":1,
+                "stockv":1,
+                "varient_option":1
             }
         }
+    
     ]
     result = list(products.objects.aggregate(*pipeline))
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
-
     headers = [
-        "S.No","Handle", "Title","Vendor", "Tags", "Product Category", "Key_features","Variant SKU", "Variant Price", "Image Src", "Options"
+    "S.No", "Model", "UPC/EAN", "Product Name", "Category Level", "Long Description", "Short Description",
+    "Brand", "Breadcrumb", "MSRP", "Base Price", "Tags", "Variant SKU", "Unfinished Price", 
+    "Finished Price", "Image Src", "Image Position", "Key Features", "Stock"
     ]
+
+    # Add headers for variant options dynamically based on the number of variant options in the data
+    variant_headers = []
+    max_variants = 5
+    for i in range(1, max_variants + 1):
+        variant_headers.append(f"Variant {i} Name")
+        variant_headers.append(f"Variant {i} Value")
+    headers.extend(variant_headers)
+
     worksheet.append(headers)
 
-    for i,item in enumerate(result):
-        options_str = ""
-        # options_str = '; '.join([
-        #     f"{opt['option_name']}: {opt['option_value']}" 
-        #     for opt in item.get('options', [])
-        # ])
+    for i, item in enumerate(result):
         row = [
-            i+1,
-            item["Handle"], 
-            item["Title"], 
-            item["Vendor"], 
-            item["Tags"], 
-            item["Product Category"], 
-            item["Key_features"], 
-            item["Variant SKU"], 
-            item["Variant Price"], 
-            item["Image Src"], 
-            options_str
+            i + 1,
+            item.get("model", ""),
+            item.get("upc_ean", ""),
+            item.get("product_name", ""),
+            item.get("category level", ""),
+            item.get("long_description", ""),
+            item.get("short_description", ""),
+            item.get("brand", ""),
+            item.get("breadcrumb", ""),
+            item.get("msrp", ""),
+            item.get("base_price", ""),
+            item.get("Tags", ""),
+            item.get("Variant SKU", ""),
+            item.get("Un Finished Price", ""),
+            item.get("Finished Price", ""),
+            str(item.get("Image Src", "")),
+            item.get("Key Features", ""),
+            item.get("stockv", ""),
         ]
-        worksheet.append(row)
 
+        # Extract variant options and add them to the row
+        variant_options = item.get("varient_option", [])
+        for j in range(max_variants):
+            if j < len(variant_options):
+                row.append(variant_options[j].get('name', ''))
+                row.append(variant_options[j].get('value', ''))
+            else:
+                row.append('')  # Empty values for variants that don't exist
+
+        worksheet.append(row)
     buffer = BytesIO()
     workbook.save(buffer)
-    buffer.seek(0)  
-
-    response = HttpResponse(
-        buffer,
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
+    buffer.seek(0) 
+    response = HttpResponse(buffer, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response['Content-Disposition'] = 'attachment; filename="products.xlsx"'
-    
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 import pandas as pd
@@ -949,30 +1069,19 @@ def retrieveData(request):
     try:
         if file.name.endswith('.xlsx'):
             sheets_dict = pd.read_excel(file, sheet_name=None)
-
-            # Create a dictionary to hold the JSON data for each sheet
             all_sheets_json = {}
-
-            # Iterate through the sheets and convert each to JSON
             for sheet_name, df in sheets_dict.items():
-                # Convert DataFrame to JSON
                 json_data = df.to_json(orient='records')
-                
-                # Store the JSON data for the current sheet
                 all_sheets_json[sheet_name] = json_data
 
             with open('sheets_output.json', 'w') as json_file:
                 json.dump(all_sheets_json, json_file)
         elif file.name.endswith('.csv'):
             df = pd.read_csv(file)
-
             json_data = df.to_json(orient='records')
-
         elif file.name.endswith('.txt'):
             df = pd.read_csv(file, sep='\t') 
-
             json_data = df.to_json(orient='records')
-
             print(json_data)
         elif file.name.endswith('.pdf'):
             with pdfplumber.open(file) as pdf:
@@ -1198,4 +1307,69 @@ def obtainDashboardCount(request):
 
     return data
 
+@csrf_exempt
+def swapProductToCategory(request):
+    data = dict()
+    json_req = JSONParser().parse(request)
+    product_id = json_req.get("product_id")
+    category_id = json_req.get("category_id")
+    category_name = json_req.get["category_name"]
+    all_ids = ""
+    if category_name == "level-1":
+        category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
+        if category_obj:
+            all_ids = category_obj.name
+            for i in category_obj.level_one_category_list:
+                all_ids = all_ids  + ">"+ i.name 
+                for j in i.level_two_category_list:
+                    all_ids = all_ids + ">"+ j.name 
+                    for k in j.level_three_category_list:
+                        all_ids = all_ids + ">"+ k.name
+                        for l in  k.level_four_category_list:
+                            all_ids = all_ids + ">"+ l.name 
+                            for m in  l.level_five_category_list:
+                                all_ids = all_ids + ">"+ m.name 
+    elif  category_name == "level-2":
+        level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
+        if level_one_category_obj:
+            all_ids = level_one_category_obj.name
+            for j in i.level_two_category_list:
+                all_ids = all_ids + ">"+ j.name 
+                for k in j.level_three_category_list:
+                    all_ids = all_ids + ">"+ k.name
+                    for l in  k.level_four_category_list:
+                        all_ids = all_ids + ">"+ l.name 
+                        for m in  l.level_five_category_list:
+                            all_ids = all_ids + ">"+ m.name 
 
+    elif  category_name == "level-3":
+        level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
+        if level_two_category_obj:
+            all_ids = level_two_category_obj.name
+            for k in j.level_three_category_list:
+                all_ids = all_ids + ">"+ k.name
+                for l in  k.level_four_category_list:
+                    all_ids = all_ids + ">"+ l.name 
+                    for m in  l.level_five_category_list:
+                        all_ids = all_ids + ">"+ m.name
+    elif  category_name == "level-4":
+        level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
+        if level_three_category_obj:
+            all_ids = level_three_category_obj.name
+            for l in  k.level_four_category_list:
+                all_ids = all_ids + ">"+ l.name 
+                for m in  l.level_five_category_list:
+                    all_ids = all_ids + ">"+ m.name
+    elif  category_name == "level-5":
+        level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
+        if level_four_category_obj:
+            all_ids = level_three_category_obj.name
+            for m in  l.level_five_category_list:
+                all_ids = all_ids + ">"+ m.name
+    DatabaseModel.update_documents(product_category_config.objects,{'product_id':product_id},{'category_level':all_ids,"category_id":category_id})
+    data['status'] = True
+    return data
+
+@csrf_exempt
+def sampleData(request):
+    pass
