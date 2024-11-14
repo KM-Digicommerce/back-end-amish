@@ -60,7 +60,7 @@ class product_varient(Document):
 
 class products(Document):
     model = fields.StringField()
-    # mpn = fields.StringField(required=True)
+    mpn = fields.StringField()
     upc_ean = fields.StringField(default = "")
     breadcrumb = fields.StringField()
     brand_name = fields.StringField()
@@ -74,6 +74,7 @@ class products(Document):
     base_price = fields.StringField(default = "")
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
+    image = fields.StringField()
 
 class leaf_option(EmbeddedDocument):
     leaf_count = fields.IntField()
