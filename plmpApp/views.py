@@ -147,7 +147,7 @@ def createProduct(request):
         level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
         if level_one_category_obj:
             all_ids = level_one_category_obj.name
-            for j in i.level_two_category_list:
+            for j in level_one_category_obj.level_two_category_list:
                 all_ids = all_ids + ">"+ j.name 
                 for k in j.level_three_category_list:
                     all_ids = all_ids + ">"+ k.name
@@ -160,7 +160,7 @@ def createProduct(request):
         level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
         if level_two_category_obj:
             all_ids = level_two_category_obj.name
-            for k in j.level_three_category_list:
+            for k in level_two_category_obj.level_three_category_list:
                 all_ids = all_ids + ">"+ k.name
                 for l in  k.level_four_category_list:
                     all_ids = all_ids + ">"+ l.name 
@@ -170,7 +170,7 @@ def createProduct(request):
         level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
         if level_three_category_obj:
             all_ids = level_three_category_obj.name
-            for l in  k.level_four_category_list:
+            for l in  level_three_category_obj.level_four_category_list:
                 all_ids = all_ids + ">"+ l.name 
                 for m in  l.level_five_category_list:
                     all_ids = all_ids + ">"+ m.name
@@ -178,7 +178,7 @@ def createProduct(request):
         level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
         if level_four_category_obj:
             all_ids = level_three_category_obj.name
-            for m in  l.level_five_category_list:
+            for m in  level_four_category_obj.level_five_category_list:
                 all_ids = all_ids + ">"+ m.name
     for z in product_obj['varients']:
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":z['finished_price'],"un_finished_price":z['un_finished_price'],"quantity":z['quantity']})
