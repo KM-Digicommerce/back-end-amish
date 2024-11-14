@@ -123,8 +123,8 @@ def createProduct(request):
         "features":product_obj['features'],
         "attributes":product_obj['attributes'],
         "tags":product_obj['tags'],
-        "msrp":product_obj['msrp'],
-        "base_price":product_obj['base_price'],
+        "msrp":str(product_obj['msrp']),
+        "base_price":str(product_obj['base_price']),
         "key_features":product_obj['key_features']
     }
     products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
@@ -181,7 +181,7 @@ def createProduct(request):
             for m in  level_four_category_obj.level_five_category_list:
                 all_ids = all_ids + ">"+ m.name
     for z in product_obj['varients']:
-        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":z['finished_price'],"un_finished_price":z['un_finished_price'],"quantity":z['quantity']})
+        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity']})
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
@@ -1000,7 +1000,7 @@ def exportAll(request):
     headers = [
     "S.No", "Model", "UPC/EAN", "Product Name", "Category Level", "Long Description", "Short Description",
     "Brand", "Breadcrumb", "MSRP", "Base Price", "Tags", "Variant SKU", "Unfinished Price", 
-    "Finished Price", "Image Src", "Image Position", "Key Features", "Stock"
+    "Finished Price", "Image Src", "Key Features", "Stock"
     ]
 
     # Add headers for variant options dynamically based on the number of variant options in the data
