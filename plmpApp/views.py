@@ -115,8 +115,9 @@ def createProduct(request):
     product_obj_save = {
         "model" :product_obj['model'],
         "upc_ean" :product_obj['upc_ean'],
+        "upc_ean" :product_obj['upc_ean'],
         "breadcrumb":product_obj['breadcrumb'],
-        "breadcrumb":product_obj['breadcrumb'],
+        "Brand":product_obj['Brand'],
         "product_name":product_obj['product_name'],
         "long_description":product_obj['long_description'],
         "short_description":product_obj['short_description'],
@@ -1373,3 +1374,17 @@ def swapProductToCategory(request):
 @csrf_exempt
 def sampleData(request):
     pass
+
+@csrf_exempt
+def createAndAddVarient(request):
+    data = dict()
+    json_req = JSONParser().parse(request)
+    product_id = json_req.get("product_id")
+    varient_obj = json_req.get("varient_obj")
+    product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":varient_obj['sku_number'],"finished_price":str(varient_obj['finished_price']),"un_finished_price":str(varient_obj['un_finished_price']),"quantity":varient_obj['quantity']})
+    for i in varient_obj['options']:
+        product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
+        DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
+    DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
+    data['status'] = True
+    return data
