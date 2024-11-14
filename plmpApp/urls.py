@@ -1,7 +1,7 @@
 
 
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -41,6 +41,7 @@ urlpatterns = [
     path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount'),
     path('sampleData/', sampleData, name='sampleData'),
     path('createAndAddVarient/', createAndAddVarient, name='createAndAddVarient'),
+    path('swapProductToCategory/', swapProductToCategory, name='swapProductToCategory'),
     
 
 ]
