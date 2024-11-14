@@ -117,7 +117,7 @@ def createProduct(request):
         "upc_ean" :product_obj['upc_ean'],
         "upc_ean" :product_obj['upc_ean'],
         "breadcrumb":product_obj['breadcrumb'],
-        "Brand":product_obj['Brand'],
+        "brand":product_obj['Brand'],
         "product_name":product_obj['product_name'],
         "long_description":product_obj['long_description'],
         "short_description":product_obj['short_description'],
