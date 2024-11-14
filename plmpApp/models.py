@@ -63,7 +63,7 @@ class products(Document):
     mpn = fields.StringField()
     upc_ean = fields.StringField(default = "")
     breadcrumb = fields.StringField()
-    brand_name = fields.StringField()
+    brand = fields.StringField()
     product_name = fields.StringField()
     long_description = fields.StringField()
     short_description = fields.StringField()
