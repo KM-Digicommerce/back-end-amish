@@ -161,12 +161,15 @@ def createProduct(request):
         level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
         if level_two_category_obj:
             all_ids = level_two_category_obj.name
+            print(">all_ids",all_ids)
             for k in level_two_category_obj.level_three_category_list:
-                all_ids = all_ids + ">"+ k.name
+                all_ids = all_ids+ ">"+ k.name
+                print(">all_ids",all_ids)
                 for l in  k.level_four_category_list:
-                    all_ids = all_ids + ">"+ l.name 
+                    all_ids = all_ids+ ">"+ l.name 
+                    print(">all_ids",all_ids)
                     for m in  l.level_five_category_list:
-                        all_ids = all_ids + ">"+ m.name
+                        all_ids = all_ids+ ">"+ m.name
     elif  category_name == "level-4":
         level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
         if level_three_category_obj:
@@ -174,11 +177,11 @@ def createProduct(request):
             for l in  level_three_category_obj.level_four_category_list:
                 all_ids = all_ids + ">"+ l.name 
                 for m in  l.level_five_category_list:
-                    all_ids = all_ids + ">"+ m.name
+                    all_ids = all_ids+">"+ m.name
     elif  category_name == "level-5":
         level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
         if level_four_category_obj:
-            all_ids = level_three_category_obj.name
+            all_ids = level_four_category_obj.name
             for m in  level_four_category_obj.level_five_category_list:
                 all_ids = all_ids + ">"+ m.name
     for z in product_obj['varients']:
@@ -768,13 +771,12 @@ def productUpdate(request):
     data = dict()
     data['is_updated'] = True
     return data
-
 @csrf_exempt
 def varientBulkUpdate(request):
     json_req = JSONParser().parse(request)
     varient_obj_list = json_req['varient_obj_list']
-    # for i in varient_obj_list:
-    #     DatabaseModel.update_documents(Variants.objects,{'id':i['id']},i['update_obj'])
+    for i in varient_obj_list:
+        DatabaseModel.update_documents(product_varient.objects,{'id':i['id']},{'sku_number':i[""],"finished_price":i["finished_price"],"un_finished_price":i["un_finished_price"],"quantity":i["quantity"]})
     data = dict()
     data['is_updated'] = True
     return data
@@ -1310,12 +1312,13 @@ def obtainDashboardCount(request):
 
 @csrf_exempt
 def swapProductToCategory(request):
-    data = dict()
     json_req = JSONParser().parse(request)
+    print(json_req)
     product_id = json_req.get("product_id")
     category_id = json_req.get("category_id")
-    category_name = json_req.get["category_name"]
+    category_name = json_req.get("category_name")
     all_ids = ""
+    data = dict()
     if category_name == "level-1":
         category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
         if category_obj:
@@ -1334,7 +1337,7 @@ def swapProductToCategory(request):
         level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
         if level_one_category_obj:
             all_ids = level_one_category_obj.name
-            for j in i.level_two_category_list:
+            for j in level_one_category_obj.level_two_category_list:
                 all_ids = all_ids + ">"+ j.name 
                 for k in j.level_three_category_list:
                     all_ids = all_ids + ">"+ k.name
@@ -1347,7 +1350,7 @@ def swapProductToCategory(request):
         level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
         if level_two_category_obj:
             all_ids = level_two_category_obj.name
-            for k in j.level_three_category_list:
+            for k in level_two_category_obj.level_three_category_list:
                 all_ids = all_ids + ">"+ k.name
                 for l in  k.level_four_category_list:
                     all_ids = all_ids + ">"+ l.name 
@@ -1357,18 +1360,19 @@ def swapProductToCategory(request):
         level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
         if level_three_category_obj:
             all_ids = level_three_category_obj.name
-            for l in  k.level_four_category_list:
+            for l in  level_three_category_obj.level_four_category_list:
                 all_ids = all_ids + ">"+ l.name 
                 for m in  l.level_five_category_list:
                     all_ids = all_ids + ">"+ m.name
     elif  category_name == "level-5":
         level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
         if level_four_category_obj:
-            all_ids = level_three_category_obj.name
-            for m in  l.level_five_category_list:
+            all_ids = level_four_category_obj.name
+            for m in  level_four_category_obj.level_five_category_list:
                 all_ids = all_ids + ">"+ m.name
     DatabaseModel.update_documents(product_category_config.objects,{'product_id':product_id},{'category_level':all_ids,"category_id":category_id})
-    data['status'] = True
+    data['is_update'] = True
+    print(data)
     return data
 
 @csrf_exempt
