@@ -117,7 +117,7 @@ def createProduct(request):
         "upc_ean" :product_obj['upc_ean'],
         "upc_ean" :product_obj['upc_ean'],
         "breadcrumb":product_obj['breadcrumb'],
-        "brand":product_obj['Brand'],
+        "brand":product_obj['brand'],
         "product_name":product_obj['product_name'],
         "long_description":product_obj['long_description'],
         "short_description":product_obj['short_description'],
@@ -549,7 +549,7 @@ def obtainAllProductList(request):
                     'model':"$products.model",
                     'upc_ean':"$products.upc_ean",
                     'breadcrumb':"$products.breadcrumb",
-                    'brand_name':"$products.brand_name",
+                    'brand':"$products.brand",
                     'product_name':"$products.product_name",
                     'long_description':"$products.long_description",
                     'short_description':"$products.short_description",
@@ -679,7 +679,7 @@ def upload_file(request):
                             level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':i})
                         DatabaseModel.update_documents(level_four_category.objects,{"id":previous_category_id},{"push__level_five_category_list":level_five_category_obj.id})
                         previous_category_id = level_five_category_obj.id
-                product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name,"long_description":long_description,"short_description":short_description,"brand_name":brand,"breadcrumb":breadcrumb,"msrp":str(msrp),"base_price":str(base_price),"key_features":key_features,'tags':Tags})
+                product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name,"long_description":long_description,"short_description":short_description,"brand":brand,"breadcrumb":breadcrumb,"msrp":str(msrp),"base_price":str(base_price),"key_features":key_features,'tags':Tags})
                 product_id = product_obj.id
                 product_category_config_obj = DatabaseModel.save_documents(product_category_config,{'product_id':product_id,'category_level':category_level,"category_id":str(previous_category_id)})
             else:
@@ -721,7 +721,7 @@ def obtainProductDetails(request):
                     'model':"$model",
                     'upc_ean':"$upc_ean",
                     'breadcrumb':"$breadcrumb",
-                    'brand_name':"$brand_name",
+                    'brand':"$brand",
                     'product_name':"$product_name",
                     'long_description':"$long_description",
                     'short_description':"$short_description",
