@@ -466,7 +466,7 @@ def obtainCategoryAndSections(request):
 @csrf_exempt
 def obtainAllProductList(request):
     # json_req = JSONParser().parse(request)
-    category_id = request.GET.get("id")
+    category_id = request.GET.get("category_id")
     level_name = request.GET.get("level_name")
     if category_id:
         all_ids = []
@@ -520,8 +520,8 @@ def obtainAllProductList(request):
                 all_ids.append(level_four_category_obj.id)
                 for m in  level_four_category_obj.level_five_category_list:
                     all_ids.append(m.id)
-
-        category_obj = {"category_id":{'$in':[all_ids]}}
+        all_ids = [str(i) for i in all_ids]
+        category_obj = {"category_id":{'$in':all_ids}}
     else:
         category_obj = {}
     pipeline = [
@@ -1387,6 +1387,7 @@ def createAndAddVarient(request):
     varient_obj = json_req.get("varient_obj")
     product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":varient_obj['sku_number'],"finished_price":str(varient_obj['finished_price']),"un_finished_price":str(varient_obj['un_finished_price']),"quantity":varient_obj['quantity']})
     for i in varient_obj['options']:
+        print(i)
         product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
         DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
     DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
