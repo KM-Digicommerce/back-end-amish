@@ -601,7 +601,6 @@ def upload_file(request):
     except Exception as e:
         return data
     for i in range(len(df)):
-        print(i)
         row_dict = df.iloc[i].to_dict()
         if not pd.isna(row_dict.get("Variant SKU")):
             print(">>123")
@@ -952,6 +951,7 @@ def exportAll(request):
             "$group": {
                 "_id": "$product_varient_ins._id",
                 "model":{ "$first":"$model"},
+                "mpn":{ "$first":"$mpn"},
                 "upc_ean":{ "$first":"$upc_ean"},
                 "product_name":{ "$first":"$product_name"},
                 "category level":{ "$first":"$product_category_config_ins.category_level"},
@@ -991,7 +991,8 @@ def exportAll(request):
                 "Image Position":1,
                 "Key Features":1,
                 "stockv":1,
-                "varient_option":1
+                "varient_option":1,
+                'mpn':1
             }
         }
     
@@ -1000,42 +1001,36 @@ def exportAll(request):
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
-    headers = [
-    "S.No", "Model", "UPC/EAN", "Product Name", "Category Level", "Long Description", "Short Description",
-    "Brand", "Breadcrumb", "MSRP", "Base Price", "Tags", "Variant SKU", "Unfinished Price", 
-    "Finished Price", "Image Src", "Key Features", "Stock"
+    headers = [   
+    "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
+     "MSRP", "Base Price", "Unfinished Price", 
+    "Finished Price"
     ]
-
-    # Add headers for variant options dynamically based on the number of variant options in the data
     variant_headers = []
     max_variants = 5
     for i in range(1, max_variants + 1):
         variant_headers.append(f"Variant {i} Name")
         variant_headers.append(f"Variant {i} Value")
     headers.extend(variant_headers)
-
+    headers.extend(["Image Src", "Stock"])
     worksheet.append(headers)
 
     for i, item in enumerate(result):
         row = [
             i + 1,
+            item.get("mpn", ""),
+            item.get("Variant SKU", ""),
+            item.get("product_name", ""),
             item.get("model", ""),
             item.get("upc_ean", ""),
-            item.get("product_name", ""),
             item.get("category level", ""),
-            item.get("long_description", ""),
-            item.get("short_description", ""),
             item.get("brand", ""),
-            item.get("breadcrumb", ""),
+            item.get("short_description", ""),
+            item.get("long_description", ""),
             item.get("msrp", ""),
             item.get("base_price", ""),
-            item.get("Tags", ""),
-            item.get("Variant SKU", ""),
             item.get("Un Finished Price", ""),
-            item.get("Finished Price", ""),
-            str(item.get("Image Src", "")),
-            item.get("Key Features", ""),
-            item.get("stockv", ""),
+            item.get("Finished Price", "")
         ]
 
         # Extract variant options and add them to the row
@@ -1046,7 +1041,7 @@ def exportAll(request):
                 row.append(variant_options[j].get('value', ''))
             else:
                 row.append('')  # Empty values for variants that don't exist
-
+        row.extend([ str(item.get("Image Src", "")),item.get("stockv", ""),])
         worksheet.append(row)
     buffer = BytesIO()
     workbook.save(buffer)
