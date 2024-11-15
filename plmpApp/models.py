@@ -70,11 +70,11 @@ class products(Document):
     features = fields.StringField()
     attributes = fields.StringField()
     tags = fields.StringField()
-    msrp = fields.StringField(default = "")
-    base_price = fields.StringField(default = "")
+    msrp = fields.StringField()
+    base_price = fields.StringField()
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
-    image = fields.StringField()
+    image = fields.ListField(fields.StringField())
 
 class leaf_option(EmbeddedDocument):
     leaf_count = fields.IntField()
