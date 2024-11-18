@@ -13,6 +13,12 @@ from .models import level_five_category
 from .models import product_category_config
 from .models import product_varient_option
 from .models import product_varient
+from .models import category_log
+from .models import product_log
+from .models import product_varient_log
+
+from .models import category_varient_option_log
+
 from .models import category_varient
 from .models import type_name
 from .models import type_value
@@ -41,34 +47,39 @@ def create_user(request):
             category_obj = category(name=name,section_list = [])
             category_obj.save()
     return JsonResponse({'status': 'User created'})
-#CRUD
-#create
+
 @csrf_exempt
 def createCategory(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_obj = DatabaseModel.save_documents(category,{'name':name})
     data = dict()
+    logForCategory(category_obj.id,"create",user_login_id,'level-1')
     data['is_created'] = True
     return data
 
 @csrf_exempt
 def createCategory1(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_id = json_req.get("category_id")
     level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':name})
     DatabaseModel.update_documents(category.objects,{"id":category_id},{'add_to_set__level_one_category_list':level_one_category_obj.id})
     data = dict()
+    logForCategory(level_one_category_obj.id,"create",user_login_id,'level-2')
     data['is_created'] = True
     return data
 @csrf_exempt
 def createCategory2(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_id = json_req.get("category_id")
-    section_obj = DatabaseModel.save_documents(level_two_category,{'name':name})
-    DatabaseModel.update_documents(level_one_category.objects,{"id":category_id},{'add_to_set__level_two_category_list':section_obj.id})
+    level_two_category_obj = DatabaseModel.save_documents(level_two_category,{'name':name})
+    DatabaseModel.update_documents(level_one_category.objects,{"id":category_id},{'add_to_set__level_two_category_list':level_two_category_obj.id})
+    logForCategory(level_two_category_obj.id,"create",user_login_id,'level-3')
     data = dict()
     data['is_created'] = True
     return data
@@ -76,38 +87,45 @@ def createCategory2(request):
 
 @csrf_exempt
 def createCategory3(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     section_id = json_req.get("category_id")
-    product_type_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
-    DatabaseModel.update_documents(level_two_category.objects,{"id":section_id},{'add_to_set__level_three_category_list':product_type_obj.id})
+    level_three_category_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
+    DatabaseModel.update_documents(level_two_category.objects,{"id":section_id},{'add_to_set__level_three_category_list':level_three_category_obj.id})
+    logForCategory(level_three_category_obj.id,"create",user_login_id,'level-4')
     data = dict()
     data['is_created'] = True
     return data
 @csrf_exempt
 def createCategory4(request):
     json_req = JSONParser().parse(request)
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     name = json_req.get("name")
     section_id = json_req.get("category_id")
-    product_type_obj = DatabaseModel.save_documents(level_four_category,{'name':name})
-    DatabaseModel.update_documents(level_three_category.objects,{"id":section_id},{'add_to_set__level_four_category_list':product_type_obj.id})
+    level_four_category_obj = DatabaseModel.save_documents(level_four_category,{'name':name})
+    DatabaseModel.update_documents(level_three_category.objects,{"id":section_id},{'add_to_set__level_four_category_list':level_four_category_obj.id})
+    logForCategory(level_four_category_obj.id,"create",user_login_id,'level-5')
     data = dict()
     data['is_created'] = True
     return data
 
 @csrf_exempt
 def createCategory5(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     section_id = json_req.get("category_id")
-    product_type_obj = DatabaseModel.save_documents(level_five_category,{'name':name})
-    DatabaseModel.update_documents(level_four_category.objects,{"id":section_id},{'add_to_set__level_five_category_list':product_type_obj.id})
+    level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':name})
+    DatabaseModel.update_documents(level_four_category.objects,{"id":section_id},{'add_to_set__level_five_category_list':level_five_category_obj.id})
+    logForCategory(level_five_category_obj.id,"create",user_login_id,'level-6')
     data = dict()
     data['is_created'] = True
     return data
 
 @csrf_exempt
 def createProduct(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     product_obj = json_req.get("product_obj")
     category_id = product_obj["category_id"]
@@ -129,68 +147,14 @@ def createProduct(request):
         "key_features":product_obj['key_features']
     }
     products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
-    all_ids = ""
-    if category_name == "level-1":
-        category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
-        if category_obj:
-            all_ids = category_obj.name
-            for i in category_obj.level_one_category_list:
-                all_ids = all_ids  + ">"+ i.name 
-                for j in i.level_two_category_list:
-                    all_ids = all_ids + ">"+ j.name 
-                    for k in j.level_three_category_list:
-                        all_ids = all_ids + ">"+ k.name
-                        for l in  k.level_four_category_list:
-                            all_ids = all_ids + ">"+ l.name 
-                            for m in  l.level_five_category_list:
-                                all_ids = all_ids + ">"+ m.name 
-    elif  category_name == "level-2":
-        level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
-        if level_one_category_obj:
-            all_ids = level_one_category_obj.name
-            for j in level_one_category_obj.level_two_category_list:
-                all_ids = all_ids + ">"+ j.name 
-                for k in j.level_three_category_list:
-                    all_ids = all_ids + ">"+ k.name
-                    for l in  k.level_four_category_list:
-                        all_ids = all_ids + ">"+ l.name 
-                        for m in  l.level_five_category_list:
-                            all_ids = all_ids + ">"+ m.name 
-
-    elif  category_name == "level-3":
-        level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
-        if level_two_category_obj:
-            all_ids = level_two_category_obj.name
-            print(">all_ids",all_ids)
-            for k in level_two_category_obj.level_three_category_list:
-                all_ids = all_ids+ ">"+ k.name
-                print(">all_ids",all_ids)
-                for l in  k.level_four_category_list:
-                    all_ids = all_ids+ ">"+ l.name 
-                    print(">all_ids",all_ids)
-                    for m in  l.level_five_category_list:
-                        all_ids = all_ids+ ">"+ m.name
-    elif  category_name == "level-4":
-        level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
-        if level_three_category_obj:
-            all_ids = level_three_category_obj.name
-            for l in  level_three_category_obj.level_four_category_list:
-                all_ids = all_ids + ">"+ l.name 
-                for m in  l.level_five_category_list:
-                    all_ids = all_ids+">"+ m.name
-    elif  category_name == "level-5":
-        level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
-        if level_four_category_obj:
-            all_ids = level_four_category_obj.name
-            for m in  level_four_category_obj.level_five_category_list:
-                all_ids = all_ids + ">"+ m.name
     for z in product_obj['varients']:
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity']})
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
         DatabaseModel.update_documents(products.objects,{"id":products_obj_1.id},{"add_to_set__options":product_varient_obj.id})
-    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj_1.id,'category_level':all_ids,"category_id":category_id})
+    products_obj = DatabaseModel.save_documents(product_category_config,{'product_id':products_obj_1.id,'category_level':category_name,"category_id":category_id})
+    logForCreateProduct(products_obj_1.id,user_login_id,"create")
     data = dict()
     data['status'] = True
     
@@ -645,6 +609,7 @@ def upload_file(request):
                 category_list = []
                 if isinstance(category_level, str):
                     category_list = [item.strip() for item in category_level.split('>')]
+                    
                 previous_category_id = ""
                 for index,i in enumerate(category_list):
                     if index == 0:
@@ -684,6 +649,19 @@ def upload_file(request):
                         previous_category_id = level_five_category_obj.id
                 product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name,"long_description":long_description,"short_description":short_description,"brand":brand,"breadcrumb":breadcrumb,"msrp":str(msrp),"base_price":str(base_price),"key_features":key_features,'tags':Tags})
                 product_id = product_obj.id
+                category_level = ""
+                if len(category_list) == 1:
+                    category_level = "level-1"
+                elif len(category_list) == 2:
+                    category_level = "level-2"
+                elif len(category_list) == 3:
+                    category_level = "level-3"
+                elif len(category_list) == 4:
+                    category_level = "level-4"
+                elif len(category_list) == 5:
+                    category_level = "level-5"
+                elif len(category_list) == 6:
+                    category_level = "level-6"
                 product_category_config_obj = DatabaseModel.save_documents(product_category_config,{'product_id':product_id,'category_level':category_level,"category_id":str(previous_category_id)})
             else:
                 product_id = product_obj.id 
@@ -763,12 +741,14 @@ def productBulkUpdate(request):
 
 @csrf_exempt
 def productUpdate(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
     print(".",json_req['update_obj'])
     json_req['update_obj']['base_price'] = str(json_req['update_obj']['base_price'])
     json_req['update_obj']['msrp'] = str(json_req['update_obj']['msrp'])
     DatabaseModel.update_documents(products.objects,{'id':product_id},json_req['update_obj'])
+    logForCreateProduct(product_id,user_login_id,"update")
     data = dict()
     data['is_updated'] = True
     return data
@@ -908,7 +888,6 @@ def exportAll(request):
                 'localField': 'product_varient_ins.varient_option_id',
                 'foreignField': '_id',
                 'as': 'product_varient_option_ins'
-            
             }
         },  
         {'$unwind': {'path': '$product_varient_option_ins', 'preserveNullAndEmptyArrays': True}},{
@@ -1185,6 +1164,7 @@ def obtainVarientForCategory(request):
 
 @csrf_exempt
 def createVarientOption(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_varient_id = json_req.get("category_varient_id")
@@ -1192,6 +1172,7 @@ def createVarientOption(request):
     if category_varient_id == "":
         category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':category_id})
         category_varient_id = str(category_varient_obj.id)
+        obtainlogForCategoryVarientOption(category_id,category_varient_id,"create",ObjectId(user_login_id))
     type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':name})
     if type_name_obj:
         type_name_id = type_name_obj.id
@@ -1205,6 +1186,7 @@ def createVarientOption(request):
         type_name_id = DatabaseModel.save_documents(type_name,{'name':name})
         varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
     DatabaseModel.update_documents(category_varient.objects,{"id":category_varient_id},{'add_to_set__varient_option_id_list':varient_option_id})
+    obtainlogForCategoryVarientOption(category_id,category_varient_id,"update",ObjectId(user_login_id))
     data = dict()
     data['is_created'] = True
     return data
@@ -1317,58 +1299,7 @@ def swapProductToCategory(request):
     category_name = json_req.get("category_name")
     all_ids = ""
     data = dict()
-    if category_name == "level-1":
-        category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
-        if category_obj:
-            all_ids = category_obj.name
-            for i in category_obj.level_one_category_list:
-                all_ids = all_ids  + ">"+ i.name 
-                for j in i.level_two_category_list:
-                    all_ids = all_ids + ">"+ j.name 
-                    for k in j.level_three_category_list:
-                        all_ids = all_ids + ">"+ k.name
-                        for l in  k.level_four_category_list:
-                            all_ids = all_ids + ">"+ l.name 
-                            for m in  l.level_five_category_list:
-                                all_ids = all_ids + ">"+ m.name 
-    elif  category_name == "level-2":
-        level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
-        if level_one_category_obj:
-            all_ids = level_one_category_obj.name
-            for j in level_one_category_obj.level_two_category_list:
-                all_ids = all_ids + ">"+ j.name 
-                for k in j.level_three_category_list:
-                    all_ids = all_ids + ">"+ k.name
-                    for l in  k.level_four_category_list:
-                        all_ids = all_ids + ">"+ l.name 
-                        for m in  l.level_five_category_list:
-                            all_ids = all_ids + ">"+ m.name 
-
-    elif  category_name == "level-3":
-        level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
-        if level_two_category_obj:
-            all_ids = level_two_category_obj.name
-            for k in level_two_category_obj.level_three_category_list:
-                all_ids = all_ids + ">"+ k.name
-                for l in  k.level_four_category_list:
-                    all_ids = all_ids + ">"+ l.name 
-                    for m in  l.level_five_category_list:
-                        all_ids = all_ids + ">"+ m.name
-    elif  category_name == "level-4":
-        level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
-        if level_three_category_obj:
-            all_ids = level_three_category_obj.name
-            for l in  level_three_category_obj.level_four_category_list:
-                all_ids = all_ids + ">"+ l.name 
-                for m in  l.level_five_category_list:
-                    all_ids = all_ids + ">"+ m.name
-    elif  category_name == "level-5":
-        level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
-        if level_four_category_obj:
-            all_ids = level_four_category_obj.name
-            for m in  level_four_category_obj.level_five_category_list:
-                all_ids = all_ids + ">"+ m.name
-    DatabaseModel.update_documents(product_category_config.objects,{'product_id':product_id},{'category_level':all_ids,"category_id":category_id})
+    DatabaseModel.update_documents(product_category_config.objects,{'product_id':product_id},{'category_level':category_name,"category_id":category_id})
     data['is_update'] = True
     print(data)
     return data
@@ -1385,7 +1316,6 @@ def createAndAddVarient(request):
     varient_obj = json_req.get("varient_obj")
     product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":varient_obj['sku_number'],"finished_price":str(varient_obj['finished_price']),"un_finished_price":str(varient_obj['un_finished_price']),"quantity":varient_obj['quantity']})
     for i in varient_obj['options']:
-        print(i)
         product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
         DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
     DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
@@ -1393,4 +1323,19 @@ def createAndAddVarient(request):
     return data
 
 
-# def createLogForCreateCategory():
+def logForCategory(category_id,action,user_id,level):
+    DatabaseModel.save_documents(category_log,{"category_id":str(category_id),"action":str(action),"user_id":ObjectId(user_id),'level':level})
+    return 1
+
+def obtainlogForCategoryVarientOption(category_id,category_varient_option_id,action,user_id):
+    DatabaseModel.save_documents(category_varient_option_log,{"category_id":str(category_id),"category_varient_option_id":ObjectId(category_varient_option_id),"user_id":ObjectId(user_id),'action':action})
+    return 1
+
+def logForCreateProduct(product_id,user_id,action):
+    DatabaseModel.save_documents(product_log,{"product_id":ObjectId(product_id),"user_id":ObjectId(user_id),'action':action})
+    return 1
+
+
+def logForCreateProductVarient(product_varient_id,user_id,action):
+    DatabaseModel.save_documents(product_varient_log,{"product_varient_id":ObjectId(product_varient_id),"user_id":ObjectId(user_id),'action':action})
+    return 1

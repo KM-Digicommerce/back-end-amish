@@ -112,14 +112,27 @@ class email_otp(Document):
     def __str__(self):
         return f'OTP for {self.email}'
     
-class categoryLog(Document):
+class category_log(Document):
+    category_id = fields.StringField()
+    action = fields.StringField() 
+    log_date = fields.DateField(default=datetime.now)
+    user_id = fields.ReferenceField(user)
+    level = fields.StringField()
+    
+class product_log(Document):
     category_id = fields.StringField()
     action = fields.StringField()
     log_date = fields.DateField(default=datetime.now)
     user_id = fields.ReferenceField(user)
     
-class productLog(Document):
+class product_varient_log(Document):
+    product_varient_id = fields.ReferenceField(product_varient)
+    action = fields.StringField()
+    log_date = fields.DateField(default=datetime.now)
+    user_id = fields.ReferenceField(user)
+class category_varient_option_log(Document):
     category_id = fields.StringField()
+    category_varient_option_id = fields.ReferenceField(varient_option)
     action = fields.StringField()
     log_date = fields.DateField(default=datetime.now)
     user_id = fields.ReferenceField(user)
