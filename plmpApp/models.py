@@ -1,5 +1,5 @@
 from mongoengine import Document , fields,EmbeddedDocument
-
+from datetime import datetime
 class user(Document):
     name = fields.StringField(required=True)
     email = fields.StringField(required=True)
@@ -111,3 +111,15 @@ class email_otp(Document):
 
     def __str__(self):
         return f'OTP for {self.email}'
+    
+class categoryLog(Document):
+    category_id = fields.StringField()
+    action = fields.StringField()
+    log_date = fields.DateField(default=datetime.now)
+    user_id = fields.ReferenceField(user)
+    
+class productLog(Document):
+    category_id = fields.StringField()
+    action = fields.StringField()
+    log_date = fields.DateField(default=datetime.now)
+    user_id = fields.ReferenceField(user)

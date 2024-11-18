@@ -57,8 +57,8 @@ def createCategory1(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name")
     category_id = json_req.get("category_id")
-    level_one_categoryn_obj = DatabaseModel.save_documents(level_one_category,{'name':name})
-    DatabaseModel.update_documents(category.objects,{"id":category_id},{'add_to_set__level_one_category_list':level_one_categoryn_obj.id})
+    level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':name})
+    DatabaseModel.update_documents(category.objects,{"id":category_id},{'add_to_set__level_one_category_list':level_one_category_obj.id})
     data = dict()
     data['is_created'] = True
     return data
@@ -560,6 +560,7 @@ def obtainAllProductList(request):
                     'attributes':"$products.attributes",
                     'tags':"$products.tags",
                     'msrp':"$products.msrp",
+                    'mpn':"$products.mpn",
                     'base_price':"$products.base_price",
                     'key_features':"$products.key_features",
                     'image':"$products.image",
@@ -720,6 +721,7 @@ def obtainProductDetails(request):
                 "$first": {
                     'product_name': "$product_name",
                     'product_id': "$_id",
+                    'mpn': "$mpn",
                     'model':"$model",
                     'upc_ean':"$upc_ean",
                     'breadcrumb':"$breadcrumb",
@@ -1388,3 +1390,6 @@ def createAndAddVarient(request):
     DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
     data['status'] = True
     return data
+
+
+# def createLogForCreateCategory():
