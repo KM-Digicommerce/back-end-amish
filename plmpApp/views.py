@@ -115,7 +115,7 @@ def createProduct(request):
     product_obj_save = {
         "model" :product_obj['model'],
         "upc_ean" :product_obj['upc_ean'],
-        "upc_ean" :product_obj['upc_ean'],
+        "mpn" :product_obj['mpn'],     
         "breadcrumb":product_obj['breadcrumb'],
         "brand":product_obj['brand_name'],
         "product_name":product_obj['product_name'],
@@ -908,8 +908,9 @@ def exportAll(request):
                 'localField': 'product_varient_ins.varient_option_id',
                 'foreignField': '_id',
                 'as': 'product_varient_option_ins'
+            
             }
-        },
+        },  
         {'$unwind': {'path': '$product_varient_option_ins', 'preserveNullAndEmptyArrays': True}},{
         '$lookup': {
             'from': 'product_varient_option',
