@@ -6,6 +6,9 @@ class user(Document):
     role = fields.StringField()
     password = fields.StringField()
 
+class brand(Document):
+    name = fields.StringField()
+
 class product_type(Document):
     name = fields.StringField(required=True)
 class section(Document):
@@ -63,7 +66,7 @@ class products(Document):
     mpn = fields.StringField()
     upc_ean = fields.StringField(default = "")
     breadcrumb = fields.StringField()
-    brand = fields.StringField()
+    brand_id = fields.ReferenceField(brand)
     product_name = fields.StringField()
     long_description = fields.StringField()
     short_description = fields.StringField()
@@ -115,24 +118,35 @@ class email_otp(Document):
 class category_log(Document):
     category_id = fields.StringField()
     action = fields.StringField() 
-    log_date = fields.DateField(default=datetime.now)
+    log_date = fields.DateTimeField(default=datetime.now)
     user_id = fields.ReferenceField(user)
     level = fields.StringField()
     
 class product_log(Document):
-    category_id = fields.StringField()
+    product_id = fields.ReferenceField(products)
     action = fields.StringField()
-    log_date = fields.DateField(default=datetime.now)
+    log_date = fields.DateTimeField(default=datetime.now)
     user_id = fields.ReferenceField(user)
     
 class product_varient_log(Document):
     product_varient_id = fields.ReferenceField(product_varient)
     action = fields.StringField()
-    log_date = fields.DateField(default=datetime.now)
+    log_date = fields.DateTimeField(default=datetime.now)
     user_id = fields.ReferenceField(user)
 class category_varient_option_log(Document):
     category_id = fields.StringField()
+    level = fields.StringField()
     category_varient_option_id = fields.ReferenceField(varient_option)
     action = fields.StringField()
-    log_date = fields.DateField(default=datetime.now)
+    log_date = fields.DateTimeField(default=datetime.now)
     user_id = fields.ReferenceField(user)
+
+class price_log(Document):
+    name = fields.StringField()
+    product_id = fields.ReferenceField(products)
+    product_varient_id = fields.ReferenceField(product_varient)
+    user_id = fields.ReferenceField(user)
+    log_date = fields.DateTimeField(default=datetime.now)
+    
+    
+    
