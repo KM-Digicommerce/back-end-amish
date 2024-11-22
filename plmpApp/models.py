@@ -149,4 +149,6 @@ class price_log(Document):
     log_date = fields.DateTimeField(default=datetime.now)
     
     
-    
+class xl_mapping(Document):
+    data= fields.DictField()
+    user_id = fields.ReferenceField(user)
