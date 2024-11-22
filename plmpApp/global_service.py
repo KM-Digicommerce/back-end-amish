@@ -3,15 +3,14 @@ import pickle
 
 class DatabaseModel:
     redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=False)
-
     @staticmethod
     def get_document(queryset, filter={}, field_list=[]):
         try:
             # Create a cache key with the collection name and filter
             cache_key = f"{queryset}:get_document:{str(filter)}"
             cached_data = DatabaseModel.redis_client.get(cache_key)
-            
             if cached_data:
+                print(pickle.loads(cached_data))
                 return pickle.loads(cached_data)
             
             # Fetch data from the database

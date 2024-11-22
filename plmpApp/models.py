@@ -54,7 +54,7 @@ class product_varient_option(Document):
     option_value_id = fields.ReferenceField(type_value)
 
 class product_varient(Document):
-    sku_number = fields.StringField(required=True)
+    sku_number = fields.StringField()
     varient_option_id = fields.ListField(fields.ReferenceField(product_varient_option))
     image_url = fields.ListField(fields.StringField())
     finished_price = fields.StringField()
