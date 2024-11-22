@@ -1669,6 +1669,7 @@ def upload_file(request):
     return data
 
 import math
+import shutil
 @csrf_exempt
 def saveXlData(request):
     data = dict()
@@ -1845,13 +1846,15 @@ def saveXlData(request):
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":type_name_id,"option_value_id":type_value_id})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
         DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'push__image':image_str_list})
+    file_path = "/home/dell/PLMP/plmp_backend/uploads"
+
     try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"File {file_path} has been deleted successfully.")
+        if os.path.exists(file_path) and os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+            print(f"Folder {file_path} has been deleted successfully.")
         else:
-            print(f"The file at {file_path} does not exist.")
+            print(f"The folder at {file_path} does not exist or is not a valid directory.")
     except Exception as e:
-        print(f"An error occurred while deleting the file: {e}")
+        print(f"An error occurred while deleting the folder: {e}")
     data['status'] = True
     return data

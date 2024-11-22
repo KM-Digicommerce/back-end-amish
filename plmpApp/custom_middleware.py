@@ -119,8 +119,8 @@ class CustomMiddleware:
             user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
             print(user_login_id)
             user_login_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
-            role = user_login_obj.role
             if user_login_obj != None:
+                role = user_login_obj.role
                 # refresh_cookies(request, response)
                 if check_role_and_capability(request, role):
                     res = self.get_response(request)
