@@ -1669,6 +1669,7 @@ def upload_file(request):
     return data
 
 import math
+import shutil
 @csrf_exempt
 def saveXlData(request):
     data = dict()
@@ -1764,6 +1765,7 @@ def saveXlData(request):
                 options.append({"name":option_name,"value": option_value})
             option_number += 1
         product_obj = DatabaseModel.get_document(products.objects,{"model":model})
+        
         if product_obj==None:
             category_list = []
             if isinstance(category_level, str):
@@ -1807,6 +1809,7 @@ def saveXlData(request):
                         level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':i})
                     DatabaseModel.update_documents(level_four_category.objects,{"id":previous_category_id},{"push__level_five_category_list":level_five_category_obj.id})
                     previous_category_id = level_five_category_obj.id
+            print(product_obj,brand_name,model)
             brand_obj = DatabaseModel.get_document(brand.objects,{'name':brand_name.title()})
             if brand_obj:
                 brand_id = brand_obj.id
@@ -1831,6 +1834,7 @@ def saveXlData(request):
             product_category_config_obj = DatabaseModel.save_documents(product_category_config,{'product_id':product_id,'category_level':category_level,"category_id":str(previous_category_id)})
         else:
             product_id = product_obj.id 
+        print(">>>>>>>>>>>>",Variant_SKU)
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv})
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in options:
@@ -1844,14 +1848,16 @@ def saveXlData(request):
             type_value_id = type_value_obj.id
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":type_name_id,"option_value_id":type_value_id})
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
-        DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'push__image':image_str_list})
+        DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'add_to_set__image':image_str_list})
+    file_path = "/home/dell/PLMP/plmp_backend/uploads"
+
     try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"File {file_path} has been deleted successfully.")
+        if os.path.exists(file_path) and os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+            print(f"Folder {file_path} has been deleted successfully.")
         else:
-            print(f"The file at {file_path} does not exist.")
+            print(f"The folder at {file_path} does not exist or is not a valid directory.")
     except Exception as e:
-        print(f"An error occurred while deleting the file: {e}")
+        print(f"An error occurred while deleting the folder: {e}")
     data['status'] = True
     return data
