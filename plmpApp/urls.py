@@ -1,7 +1,7 @@
 
 
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -47,6 +47,6 @@ urlpatterns = [
     path('obtainProductLog/', obtainProductLog, name='obtainProductLog'),
     path('obtainProductVarientLog/', obtainProductVarientLog, name='obtainProductVarientLog'),
     path('createBrand/', createBrand, name='createBrand'),
-    
-    
+    path('obtainBrand/', obtainBrand, name='obtainBrand'),
+    path('saveXlData/', saveXlData, name='saveXlData')
 ]
