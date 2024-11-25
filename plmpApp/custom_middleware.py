@@ -8,11 +8,11 @@ from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 def check_ignore_authentication_for_url(request):
     path = request.path.split("/")
-    try:
-        action = path[2] 
-    except IndexError:
-        return False
-    result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name": action})
+    # try:
+    #     action = path[2] 
+    # except IndexError:
+    #     return False
+    result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name__in": path})
     return result_obj is not None  
 
 def skip_for_paths():
