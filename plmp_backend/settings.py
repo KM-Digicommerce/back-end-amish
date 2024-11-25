@@ -29,10 +29,18 @@ ALLOWED_HOSTS = ['*']
 
 from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 from mongoengine import connect
-connect(
-    db=MONGODB_COURSE_DB_NAME,
-    host=MONGODB_HOST_1
-)
+# connect(
+#     db=MONGODB_COURSE_DB_NAME,
+#     host=MONGODB_HOST_1
+# )
+MONGODB_DATABASES = {
+    'default': {
+        'name': MONGODB_COURSE_DB_NAME,  # Your MongoDB database name
+        'host': MONGODB_HOST_1,     # MongoDB server address
+        'port': 27017,           # MongoDB server port
+    },
+}
+
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOW_ALL_ORIGINS = True
