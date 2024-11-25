@@ -947,8 +947,7 @@ def exportAll(request):
     worksheet.title = "Products"
     headers = [   
     "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
-     "MSRP", "Base Price", "Unfinished Price", 
-    "Finished Price"
+     "MSRP", "Base Price", "Unfinished Price", "Finished Price"
     ]
     variant_headers = []
     for i in range(1, max_variants + 1):
@@ -965,6 +964,7 @@ def exportAll(request):
         i_dict['level'] = item.get("category level", "")
         i_dict['category_id'] = item.get("category_id", "")
         getCategoryLevelOrder(i_dict)
+
         row = [
             i + 1,
             item.get("mpn", ""),
@@ -989,19 +989,15 @@ def exportAll(request):
                 row.append(variant_options[j].get('name', ''))
                 row.append(variant_options[j].get('value', ''))
             else:
-                row.append('') 
-                row.append('') 
-        img_src = item.get("Image Src", [])
-        if img_src is not None:
-            for j in range(max_image):
-                if j < len(img_src):
-                    row.append(img_src[j])
-                else:
-                    row.append('') 
-        else:
-            for j in range(max_image):
-                row.append('') 
-        row.append(item.get("stockv", ""))
+                row.append('')  # Add empty values for missing variants
+                row.append('')  # Add empty values for missing variants
+        
+        # img_src = item.get("Image Src", [])
+        # for j in range(max_image):
+        #     row.append(img_src[j] if j < len(img_src) else '')
+        
+        # print(row)
+        # row.append(item.get("stockv", ""))
         worksheet.append(row)
     buffer = BytesIO()
     workbook.save(buffer)
