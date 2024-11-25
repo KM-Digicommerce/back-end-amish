@@ -1,5 +1,5 @@
 MONGODB_COURSE_DB_NAME="PLMP"
-MONGODB_HOST_1="mongodb://plmp_admin:admin%401234@52.201.29.59:27017"
+MONGODB_HOST_1="mongodb+srv://siva:1@cluster0.uryxh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 # front_end_ip = "http://192.168.1.12:3000" 
 front_end_ip ="https://plmp-tool.netlify.app/"
 from datetime import timedelta
