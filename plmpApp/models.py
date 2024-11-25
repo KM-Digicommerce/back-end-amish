@@ -75,6 +75,8 @@ class products(Document):
     tags = fields.StringField()
     msrp = fields.StringField()
     base_price = fields.StringField()
+    discount_price = fields.StringField()
+    dealer_price = fields.StringField()
     key_features = fields.StringField()
     options = fields.ListField(fields.ReferenceField(product_varient))
     image = fields.ListField(fields.StringField())
