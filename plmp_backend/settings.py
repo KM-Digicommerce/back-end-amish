@@ -86,7 +86,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'plmpApp.custom_middleware.CustomMiddleware',
+    # 'plmpApp.custom_middleware.CustomMiddleware',
 ]
 
 ROOT_URLCONF = 'plmp_backend.urls'
