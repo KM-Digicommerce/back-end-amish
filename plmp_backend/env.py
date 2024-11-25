@@ -1,5 +1,5 @@
 MONGODB_COURSE_DB_NAME="PLMP"
-MONGODB_HOST_1="mongodb://localhost:27017"  
+MONGODB_HOST_1="mongodb://52.201.29.59:27017"  
 # front_end_ip = "http://192.168.1.12:3000" 
 front_end_ip ="https://resplendent-cranachan-8c65f0.netlify.app"
 from datetime import timedelta
