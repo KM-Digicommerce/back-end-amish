@@ -7,3 +7,5 @@ plmp_backend/env.py
 plmpApp/data_py.py
 .json
 uploads/
+
+plmp_backend/env
