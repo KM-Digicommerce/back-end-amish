@@ -33,6 +33,7 @@ connect(
     db=MONGODB_COURSE_DB_NAME,
     host=MONGODB_HOST_1
 )
+
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOW_ALL_ORIGINS = True
