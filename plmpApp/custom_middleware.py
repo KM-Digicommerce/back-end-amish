@@ -6,13 +6,16 @@ from plmp_backend.env import SIMPLE_JWT
 import jwt
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
+
+
 def check_ignore_authentication_for_url(request):
     path = request.path.split("/")
-    try:
-        action = path[2] 
-    except IndexError:
-        return False
-    result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name": action})
+    # try:
+    #     action = path[2] 
+    # except IndexError:
+    #     return False 
+    print(path)
+    result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name__in": path})
     return result_obj is not None  
 
 def skip_for_paths():
@@ -106,7 +109,14 @@ def check_role_and_capability(request,role_name):
     if capability_obj != None:
         is_accessible = True 
     return is_accessible
+import threading
 
+# Thread-local storage to store user_login_id
+_thread_locals = threading.local()
+
+def get_current_user():
+    """Access the current user in thread-local storage."""
+    return getattr(_thread_locals, 'user_login_id', None)
 
 class CustomMiddleware:
     def __init__(self, get_response):
@@ -115,9 +125,8 @@ class CustomMiddleware:
     def __call__(self, request):
         response = createJsonResponse(request)
         try:
-            # jwtObj = check_authentication(request)
             user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
-            print(user_login_id)
+            _thread_locals.user_login_id = user_login_id
             user_login_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
             if user_login_obj != None:
                 role = user_login_obj.role

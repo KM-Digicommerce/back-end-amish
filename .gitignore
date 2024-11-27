@@ -4,4 +4,8 @@ __pycache__/
 
 # Ignore the env.py file in plmp_backend
 plmp_backend/env.py
+plmpApp/data_py.py
 .json
+uploads/
+
+plmp_backend/env
