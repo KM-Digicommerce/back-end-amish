@@ -1,7 +1,6 @@
 MONGODB_COURSE_DB_NAME="PLMP"
-MONGODB_HOST_1="mongodb://plmp_admin:admin%401234@52.201.29.59:27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false"   
-# front_end_ip = "http://192.168.1.12:3000" 
-front_end_ip ="https://plmp-tool.netlify.app/"
+MONGODB_HOST_1="mongodb://localhost:27017"  
+front_end_ip = "http://192.168.1.10:3000" 
 from datetime import timedelta
 SIMPLE_JWT = {
   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=500),

@@ -1,19 +1,14 @@
-
-
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
     path('v1/', v1, name='v1'), 
     path('list-users/', create_user, name='list_users'),
     path('list-users/', create_user, name='list_users'),
-    #create
     path('loginUser/', loginUser, name='loginUser'), 
     path('sendOtp/', sendOtp, name='sendOtp'),
     path('resetPassword/', resetPassword, name='resetPassword'),
-
-    
     path('createCategory1/', createCategory1, name='createCategory1'), 
     path('createCategory/', createCategory, name='createCategory'), 
     path('createCategory2/', createCategory2, name='createCategory2'), 
@@ -21,9 +16,7 @@ urlpatterns = [
     path('createCategory4/', createCategory4, name='createCategory4'), 
     path('createCategory5/', createCategory5, name='createCategory5'), 
     path('createProduct/', createProduct, name='createProduct'),
-    #delete
     path('deleteCategory/', deleteCategory, name='deleteCategory'),
-    #update
     path('updateCategory/', updateCategory, name='updateCategory'),
     path('obtainCategoryAndSections/', obtainCategoryAndSections, name='obtainCategoryAndSections'), 
     path('obtainAllProductList/', obtainAllProductList, name='obtainAllProductList'), 
@@ -48,5 +41,6 @@ urlpatterns = [
     path('obtainProductVarientLog/', obtainProductVarientLog, name='obtainProductVarientLog'),
     path('createBrand/', createBrand, name='createBrand'),
     path('obtainBrand/', obtainBrand, name='obtainBrand'),
-    path('saveXlData/', saveXlData, name='saveXlData')
+    path('saveXlData/', saveXlData, name='saveXlData'),
+    path('obtainPriceLog/', obtainPriceLog, name='obtainPriceLog'),
 ]
