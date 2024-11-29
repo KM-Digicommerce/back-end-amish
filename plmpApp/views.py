@@ -486,6 +486,11 @@ def obtainCategoryAndSections(request):
 def obtainAllProductList(request):
     # json_req = JSONParser().parse(request)
     category_id = request.GET.get("category_id")
+    filter = request.GET.get("filter")
+    if filter:
+        reverse_check = True
+    else:
+        reverse_check = False
     level_name = request.GET.get("level_name")
     if category_id:
         all_ids = []
@@ -617,6 +622,7 @@ def obtainAllProductList(request):
             getCategoryLevelOrder(j)
         data['product_list'] = result['product_list']
         data['product_count'] = len(result['product_list'])
+        data['product_list'] = sorted(data['product_list'], key=lambda x: ObjectId(x['product_id']),reverse=reverse_check)
     return data
 
 
@@ -1225,6 +1231,7 @@ def createValueForVarientName(request):
 
 def obtainDashboardCount(request):
     data = dict()
+    print(">>>>>>>>",request.COOKIES)
     data['total_product'] = DatabaseModel.count_documents(products.objects,{})
     data['total_brand'] = DatabaseModel.count_documents(brand.objects,{})
     last_all_ids = []
