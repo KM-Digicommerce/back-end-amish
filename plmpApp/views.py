@@ -487,7 +487,7 @@ def obtainAllProductList(request):
     # json_req = JSONParser().parse(request)
     category_id = request.GET.get("category_id")
     filter = request.GET.get("filter")
-    if filter:
+    if filter == "true" or filter == None:
         reverse_check = True
     else:
         reverse_check = False
