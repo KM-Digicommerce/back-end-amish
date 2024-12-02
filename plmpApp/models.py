@@ -6,14 +6,17 @@ from bson import ObjectId
 class manufacture(Document):
     name = fields.StringField(required=True)
     logo = fields.StringField(required=True)
-
+class client(Document):
+    name = fields.StringField(required=True)
+    logo = fields.StringField()
+    location = fields.StringField()
 
 class user(Document):
     name = fields.StringField(required=True)
     email = fields.StringField(required=True)
     role = fields.StringField()
     password = fields.StringField()
-    manufacture_id = fields.ReferenceField(manufacture)
+    manufacture_id = fields.ReferenceField(client)
 
 
 class brand(Document):
@@ -231,3 +234,4 @@ class category_varient_option_log(Document):
 class xl_mapping(Document):
     data= fields.DictField()
     user_id = fields.ReferenceField(user)
+
