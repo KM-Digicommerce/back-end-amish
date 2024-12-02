@@ -20,6 +20,7 @@ from .models import type_value
 from .models import price_log
 from .models import xl_mapping
 from .models import brand
+from .models import client
 from django.http import HttpResponse
 from openpyxl import Workbook
 import pandas as pd
@@ -1231,7 +1232,6 @@ def createValueForVarientName(request):
 
 def obtainDashboardCount(request):
     data = dict()
-    print(">>>>>>>>",request.COOKIES)
     data['total_product'] = DatabaseModel.count_documents(products.objects,{})
     data['total_brand'] = DatabaseModel.count_documents(brand.objects,{})
     last_all_ids = []
@@ -2029,3 +2029,90 @@ def sampleData(req):
 from .data_py import data_list_file
 def data_fn():
     return data_list_file
+
+
+
+#SuperAdmin
+@csrf_exempt
+def createClient(request):
+    json_req = JSONParser().parse(request)
+    name = json_req.get("name").title()
+    logo = json_req.get("logo")
+    location = json_req.get("location")
+    client_obj = DatabaseModel.get_document(client.objects,{'name':name})
+    data = dict()
+    if client_obj:
+        data['is_created'] = False
+        data['error'] = "client Already Present"
+        return data
+    else:
+        client_obj = DatabaseModel.save_documents(client,{'name':name,'logo':logo,'location':location})
+    data['is_created'] = True
+    return data
+
+
+@csrf_exempt
+def obtainClient(request):
+    data = dict()
+    pipeline = [
+    {
+            '$group': {
+                "_id":None,
+                "client_list":{'$push':{"id":"$_id",'name':'$name','logo':'$logo','location':'$location'}}
+        }
+        }
+    ]
+    client_list = list(client.objects.aggregate(*pipeline))
+    data['client_list'] = list() 
+    if client_list:
+        for client_ins in client_list[0]['client_list']:
+            client_ins['id'] = str(client_ins['id'])
+        data['client_list'] = client_list[0]['client_list']
+    return data
+
+
+def obtainSuperAdminDashboard(request):
+    data = dict()
+    data['clients_count'] = DatabaseModel.count_documents(client.objects,{})
+    data['active_users_count'] = 0
+    return data
+
+@csrf_exempt
+def obtainClientDetail(request):
+    client_id = request.GET.get("id")
+    data = dict()
+    pipeline = [
+        {
+            '$match':{'_id':ObjectId(client_id)}
+        }, {
+            '$lookup': {
+                'from': 'user',
+                'localField': 'user_id',
+                'foreignField': '_id',
+                'as': 'user_ins'
+        }
+        },
+        {
+            '$unwind': {
+                'path': '$user_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+            '$group': {
+                "_id":None,
+                "id":{'$push':"$_id"},
+                'name':{'$push':'$name'},
+                'logo':{'$push':'$logo'},
+                'location':{'$push':'$location'},
+                "user_list":{'$push':{'name':'$user_ins.name','role':'$user_ins.role'}}
+        }
+        }
+    ]
+    client_list = list(client.objects.aggregate(*pipeline))
+    data['client_obj'] = dict()
+    if client_list:
+        client_list = client_list[0]
+        client_list['id'] = str(client_list['id'])
+        data['client_obj'] = client_list
+    return data
