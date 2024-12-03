@@ -2214,7 +2214,8 @@ def addUserAndRoleForClient(request):
         return data
     else:
         DatabaseModel.save_documents(user,{'name':user_obj['name'],'email':user_obj['email'],'role':user_obj['role'],'client_id':ObjectId(user_obj['id'])})
-        
+
+@csrf_exempt
 def categoryLevelForChildCategory(request):
     json_req = JSONParser().parse(request)
     dist_i = dict()
