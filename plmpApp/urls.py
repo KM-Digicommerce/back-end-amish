@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -47,5 +47,9 @@ urlpatterns = [
     path('createClient/', createClient, name='createClient'),
     path('obtainSuperAdminDashboard/', obtainSuperAdminDashboard, name='obtainSuperAdminDashboard'),
     path('obtainClientDetail/', obtainClientDetail, name='obtainClientDetail'),
+    path('addUserAndRoleForClient/', addUserAndRoleForClient, name='addUserAndRoleForClient'),
+    path('categoryLevelForChildCategory/', categoryLevelForChildCategory, name='categoryLevelForChildCategory'),
+    path('obtainClientName/', obtainClientName, name='obtainClientName'),
+    
     
 ]

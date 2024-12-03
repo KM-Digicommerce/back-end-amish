@@ -15,6 +15,7 @@ from .models import product_log
 from .models import product_varient_log
 from .models import category_varient_option_log
 from .models import category_varient
+from .models import user
 from .models import type_name
 from .models import type_value
 from .models import price_log
@@ -44,7 +45,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.management.utils import get_random_secret_key
 from pytz import timezone
 from django.utils.timezone import is_naive, make_aware
-
+from .custom_middleware import get_current_user,get_current_client
 def v1(request):
     print(get_random_secret_key())
     return JsonResponse({"PLMP_API":"v2"},safe=False)
@@ -62,14 +63,15 @@ def create_user(request):
 
 @csrf_exempt
 def createCategory(request):
+    client_id = get_current_client()
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
-    category_obj = DatabaseModel.get_document(category.objects,{'name':name})
+    category_obj = DatabaseModel.get_document(category.objects,{'name':name,client_id:ObjectId(client_id)})
     data = dict()
     if category_obj :
         data['is_created'] = False
-        data['error'] = "Category Already Created"
+        data['error'] = "Category Already Exists In Our Database"
         return data
     else:
         category_obj = DatabaseModel.save_documents(category,{'name':name})
@@ -90,7 +92,7 @@ def createCategory1(request):
         category_obj = DatabaseModel.get_document(category.objects,{'level_one_category_list__in':level_one_category_obj.id})
         if category_obj:
             data['is_created'] = False
-            data['error'] = "Category Already Created"
+            data['error'] = "Category Already Exists In Our Database"
             return data
     else:
         level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':name})
@@ -112,7 +114,7 @@ def createCategory2(request):
         category_obj = DatabaseModel.get_document(category.objects,{'level_two_category_list__in':level_two_category_obj.id})
         if category_obj:
             data['is_created'] = False
-            data['error'] = "Category Already Created"
+            data['error'] = "Category Already Exists In Our Database"
             return data
     else:
         level_two_category_obj = DatabaseModel.save_documents(level_two_category,{'name':name})
@@ -134,7 +136,7 @@ def createCategory3(request):
         category_obj = DatabaseModel.get_document(category.objects,{'level_three_category_list__in':level_three_category_obj.id})
         if category_obj:
             data['is_created'] = False
-            data['error'] = "Category Already Created"
+            data['error'] = "Category Already Exists In Our Database"
             return data
     else:
         level_three_category_obj = DatabaseModel.save_documents(level_three_category,{'name':name})
@@ -156,7 +158,7 @@ def createCategory4(request):
         category_obj = DatabaseModel.get_document(category.objects,{'level_four_category_list__in':level_four_category_obj.id})
         if category_obj:
             data['is_created'] = False
-            data['error'] = "Category Already Created"
+            data['error'] = "Category Already Exists In Our Database"
             return data
     else:
         level_four_category_obj = DatabaseModel.save_documents(level_four_category,{'name':name})
@@ -178,7 +180,7 @@ def createCategory5(request):
         category_obj = DatabaseModel.get_document(category.objects,{'level_five_category_list__in':level_five_category_obj.id})
         if category_obj:
             data['is_created'] = False
-            data['error'] = "Category Already Created"
+            data['error'] = "Category Already Exists In Our Database"
             return data
     else:
         level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':name})
@@ -193,9 +195,17 @@ def createCategory5(request):
 def createProduct(request):
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
+    client_id = get_current_client()
+    
     product_obj = json_req.get("product_obj")
     category_id = product_obj["category_id"]
     category_name = product_obj["category_name"]
+    products_obj = DatabaseModel.get_document(products.objects,{'model':product_obj['model'],'mpn':product_obj['mpn'],'client_id':client_id})
+    if products_obj:
+        data = dict()
+        data['status'] = False
+        data['error'] = "Product Already Created"
+        return data
     product_obj_save = {
         "model" :product_obj['model'],
         "upc_ean" :product_obj['upc_ean'],
@@ -215,7 +225,7 @@ def createProduct(request):
     products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     for z in product_obj['varients']:
-        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity']})
+        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity'],'total_price':str(z['total_price'])})
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
@@ -344,7 +354,11 @@ def convert_object_ids_to_strings(data):
 
 
 def obtainCategoryAndSections(request):
+    client_id = get_current_client()
     pipeline = [
+         {
+            '$match':{'client_id':ObjectId(client_id)}
+        },
     {
         '$lookup': {
             'from': 'level_one_category',
@@ -486,6 +500,8 @@ def obtainCategoryAndSections(request):
 @csrf_exempt
 def obtainAllProductList(request):
     # json_req = JSONParser().parse(request)
+    client_id = get_current_client()
+    print(client_id)
     category_id = request.GET.get("category_id")
     filter = request.GET.get("filter")
     if filter == "true" or filter == None:
@@ -496,7 +512,7 @@ def obtainAllProductList(request):
     if category_id:
         all_ids = []
         if level_name == "level-1":
-            category_obj = DatabaseModel.get_document(category.objects,{'id':category_id})
+            category_obj = DatabaseModel.get_document(category.objects,{'id':category_id,"client_id":client_id})
             if category_obj:
                 all_ids.append(category_id)
                 for i in category_obj.level_one_category_list:
@@ -567,6 +583,9 @@ def obtainAllProductList(request):
                 'preserveNullAndEmptyArrays': True
             }
         },
+    {
+        "$match":{'products.client_id':ObjectId(client_id)}
+    },
     {
         '$lookup': {
             'from': 'brand',
@@ -806,6 +825,7 @@ def obtainAllVarientList(request):
             "sku_number": { "$first": "$product_varient_ins.sku_number" },
             "finished_price": { "$first": "$product_varient_ins.finished_price" },
             "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
+            "total_price": { "$first": "$product_varient_ins.total_price" },
             "quantity": { "$first": "$product_varient_ins.quantity" },
             "image_url": { "$first": "$product_varient_ins.image_url" },
             'varient_option_list': {
@@ -819,6 +839,7 @@ def obtainAllVarientList(request):
             '$project': {
                 "_id": 0,
                 "sku_number":1,
+                'total_price':1,
             "finished_price":1,
             "un_finished_price":1,
             "quantity": 1,
@@ -834,10 +855,12 @@ def obtainAllVarientList(request):
 @csrf_exempt
 def exportAll(request):
     category_id = request.GET.get('category_id')
+    client_id = get_current_client()
+    
     if category_id:
-        category_obj = {'product_category_config_ins.category_id':category_id}
+        category_obj = {'product_category_config_ins.category_id':category_id,"client_id":ObjectId(client_id)}
     else:
-        category_obj = {}
+        category_obj = {"client_id":ObjectId(client_id)}
     pipeline = [
         {
             '$lookup': {
@@ -1088,6 +1111,7 @@ def retrieveData(request):
 @csrf_exempt
 def obtainVarientForCategory(request):
     category_id = request.GET.get("id")
+    client_id = get_current_client()
     pipeline = [
         {
             "$match":{'category_id':category_id}
@@ -1105,6 +1129,8 @@ def obtainVarientForCategory(request):
                 'path': '$varient_option',
                 'preserveNullAndEmptyArrays': True
             }
+        }, {
+            "$match":{'varient_option.client_id':ObjectId(client_id)}
         },
         {
         '$lookup': {
@@ -1187,6 +1213,7 @@ def obtainVarientForCategory(request):
 def createVarientOption(request):
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
+    client_id = get_current_client()
     name = json_req.get("name").title()
     category_varient_id = json_req.get("category_varient_id")
     category_id = json_req.get("category_id")
@@ -1194,21 +1221,28 @@ def createVarientOption(request):
     if category_varient_id == "":
         category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':category_id,'category_level':category_level})
         category_varient_id = str(category_varient_obj.id)
-        obtainlogForCategoryVarientOption(category_id,category_varient_id,"create",ObjectId(user_login_id),category_level)
     type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':name})
     if type_name_obj:
         type_name_id = type_name_obj.id
-        varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':type_name_id})
+        varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':type_name_id,'client_id':ObjectId(client_id)})
         if varient_option_obj:
             varient_option_id = varient_option_obj.id
         else:
             varient_option_obj = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
             varient_option_id = varient_option_obj.id
+        
     else:
         type_name_id = DatabaseModel.save_documents(type_name,{'name':name})
         varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':type_name_id})
+    category_varient_obj = DatabaseModel.get_document(category_varient.objects,{"id":category_varient_id,'varient_option_id_list__in':[varient_option_id]})
+    if category_varient_obj:
+        data = dict()
+        data['is_created'] = False
+        data['error'] = "Varient Option Name Already Present"
+        return data
+    obtainlogForCategoryVarientOption(category_id,varient_option_id,"update",ObjectId(user_login_id),category_level)
     DatabaseModel.update_documents(category_varient.objects,{"id":category_varient_id},{'add_to_set__varient_option_id_list':varient_option_id})
-    obtainlogForCategoryVarientOption(category_id,category_varient_id,"update",ObjectId(user_login_id),category_level)
+    
     data = dict()
     data['is_created'] = True
     return data
@@ -1218,24 +1252,32 @@ def createVarientOption(request):
 def createValueForVarientName(request):
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
+    data = dict()
+    client_id = get_current_client()
     option_id = json_req.get("option_id")
     type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':name})
     if type_value_obj:
         type_value_id = type_value_obj.id
     else:
         type_value_id = DatabaseModel.save_documents(type_value,{'name':name})
-    DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id},{'add_to_set__option_value_id_list':type_value_id})
-    data = dict()
-    data['is_created'] = True
+    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,'option_value_id_list__in':[type_value_id],client_id:ObjectId(client_id)})
+    if varient_option_obj:
+        data['is_created'] = False
+        data['error'] = "Value Already Present In This Varient Option"
+    else:
+        DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id,'client_id':client_id},{'add_to_set__option_value_id_list':type_value_id})
+        data['is_created'] = True
     return data
 
 
 def obtainDashboardCount(request):
     data = dict()
-    data['total_product'] = DatabaseModel.count_documents(products.objects,{})
-    data['total_brand'] = DatabaseModel.count_documents(brand.objects,{})
+    client_id = get_current_client()
+    print("///////////////",client_id)
+    data['total_product'] = DatabaseModel.count_documents(products.objects,{'client_id':client_id})
+    data['total_brand'] = DatabaseModel.count_documents(brand.objects,{'client_id':client_id})
     last_all_ids = []
-    category_list = DatabaseModel.list_documents(category.objects)
+    category_list = DatabaseModel.list_documents(category.objects,{'client_id':client_id})
     for category_obj in category_list:
         if len(category_obj.level_one_category_list)>0:
             for i in category_obj.level_one_category_list:
@@ -1264,7 +1306,9 @@ def obtainDashboardCount(request):
     data['total_last_level_category'] = len(last_all_ids)
     data['total_parent_level_category'] = len(category_list)
     pipeline = [
-            
+             {
+            '$match':{'client_id':ObjectId(client_id)}
+        },
         {
         '$lookup': {
             'from': 'type_name',
@@ -1311,7 +1355,6 @@ def obtainDashboardCount(request):
         ]
     result = list(varient_option.objects.aggregate(*pipeline))
     data['varent_list'] = result
-
     return data
 
 
@@ -1325,7 +1368,6 @@ def swapProductToCategory(request):
     product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'product_id':product_id})
     previous_category_id = product_category_config_obj.category_id
     DatabaseModel.update_documents(product_category_config.objects,{'product_id':product_id},{'category_level':category_name,"category_id":category_id})
-    
     category_varient_obj = DatabaseModel.get_document(category_varient.objects,{'category_id':previous_category_id})
     varient_option_id_list = category_varient_obj.varient_option_id_list
     pre_category_varient_obj = DatabaseModel.get_document(category_varient.objects,{'category_id':category_id})
@@ -1379,11 +1421,12 @@ def logForCreateProductVarient(product_varient_id,user_id,action):
 
 @csrf_exempt
 def obtainCategoryLog(request):
+    client_id = get_current_client()
     json_req = json.loads(request.body.decode("utf-8")) if request.body else {}
     action = json_req.get("action", None)
     level = json_req.get("level", None)
     if action:
-        filter_obj = {'action':action}
+        filter_obj = {'action':action,}
     elif level:
         filter_obj = {'level':level}
     else:
@@ -1405,6 +1448,8 @@ def obtainCategoryLog(request):
                 'path': '$user_ins',
                 'preserveNullAndEmptyArrays': True
             }
+        },{
+            '$match':{'user_ins.client_id':ObjectId(client_id)}
         },
         {
             '$group': {
@@ -1423,12 +1468,14 @@ def obtainCategoryLog(request):
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result'] = result[0]['category_log_list']
+        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
         return data
     return data
 
 
 @csrf_exempt
 def obtainCategoryVarientLog(request):
+    client_id = get_current_client()
     json_req = json.loads(request.body.decode("utf-8")) if request.body else {}
     action = json_req.get("action", None)
     level = json_req.get("level", None)
@@ -1455,6 +1502,8 @@ def obtainCategoryVarientLog(request):
                 'path': '$user_ins',
                 'preserveNullAndEmptyArrays': True
             }
+        },{
+            '$match':{'user_ins.client_id':ObjectId(client_id)}
         },
         {
             '$lookup': {
@@ -1469,10 +1518,11 @@ def obtainCategoryVarientLog(request):
                 'path': '$varient_option_ins',
                 'preserveNullAndEmptyArrays': True
             }
-        }, {
+        }, 
+        {
             '$lookup': {
                 'from': 'type_name',
-                'localField': 'option_name_id',
+                'localField': 'varient_option_ins.option_name_id',
                 'foreignField': '_id',
                 'as': 'type_name_ins'
         }
@@ -1501,7 +1551,8 @@ def obtainCategoryVarientLog(request):
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result'] = result[0]['category_varient_log_list']
-        print(data)
+        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
+
         return data
     return data
 
@@ -1511,6 +1562,7 @@ def obtainCategoryVarientLog(request):
 def obtainProductLog(request):
     json_req = json.loads(request.body.decode("utf-8")) if request.body else {}
     action = json_req.get("action", None)
+    client_id = get_current_client()
     level = json_req.get("level", None)
     if action:
         filter_obj = {'action':action}
@@ -1549,6 +1601,9 @@ def obtainProductLog(request):
                 'path': '$products_ins',
                 'preserveNullAndEmptyArrays': True
             }
+        }, 
+        {
+            "$match":{'products_ins.client_id':ObjectId(client_id)}
         },
         {
             '$group': {
@@ -1566,6 +1621,8 @@ def obtainProductLog(request):
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result']  = result[0]['category_varient_log_list']
+        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
+        
         return data
     return data
 
@@ -1581,6 +1638,7 @@ def convert_to_timezone(dt, tz_name):
 @csrf_exempt
 def obtainProductVarientLog(request):
     json_req = json.loads(request.body.decode("utf-8")) if request.body else {}
+    client_id = get_current_client()
     action = json_req.get("action", None)
     level = json_req.get("level", None)
     if action:
@@ -1630,6 +1688,9 @@ def obtainProductVarientLog(request):
         }
         },
         {
+            "$match":{'product_ins.client_id':ObjectId(client_id)}
+        },
+        {
             '$unwind': {
                 'path': '$product_ins',
                 'preserveNullAndEmptyArrays': True
@@ -1651,6 +1712,8 @@ def obtainProductVarientLog(request):
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result'] = result[0]['product_varient_log_list']
+        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
+        
         return data
     return data
 
@@ -1673,12 +1736,16 @@ def createBrand(request):
 
 @csrf_exempt
 def obtainBrand(request):
+    client_id = get_current_client()
     data = dict()
     pipeline = [
+        {
+            '$match':{'client_id':ObjectId(client_id)}
+        },
     {
             '$group': {
                 "_id":None,
-                "brand_list":{'$push':{"id":"$_id",'name':'$name'}}
+                "brand_list":{'$push':{"id":"$_id",'name':'$name','brand_number':'$brand_number'}}
         }
         }
     ]
@@ -1923,6 +1990,7 @@ def saveXlData(request):
 
 def obtainPriceLog(request):
     data = dict()
+    client_id = get_current_client()
     filter_obj = {}
     pipeline = [
     {
@@ -1941,6 +2009,8 @@ def obtainPriceLog(request):
                 'path': '$product_ins',
                 'preserveNullAndEmptyArrays': True
             }
+        },{
+            "$match":{'product_ins.client_id':ObjectId(client_id)}
         }, {
             '$lookup': {
                 'from': 'user',
@@ -1958,7 +2028,11 @@ def obtainPriceLog(request):
         {
             '$group': {
                 "_id":None,
-                "price_log":{'$push':{"price name":"$name","user_name":"$user_ins.name",'product_name':'$product_ins.product_name','action':'$action','log_date':'$log_date'}}
+                "price_log":{'$push':{"price name":"$name","user_name":"$user_ins.name",'product_name':'$product_ins.product_name','action':'$action',
+                'log_date':'$log_date',
+                'previous_price':'$previous_price',
+                'current_price':'$current_price'
+                }}
         }
         }
         ]
@@ -1970,6 +2044,8 @@ def obtainPriceLog(request):
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result'] = result[0]['price_log']
+        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
+        
         return data
     return data
 import requests
@@ -2115,4 +2191,37 @@ def obtainClientDetail(request):
         client_list = client_list[0]
         client_list['id'] = str(client_list['id'])
         data['client_obj'] = client_list
+    return data
+
+def addUserAndRoleForClient(request):
+    json_req = JSONParser().parse(request)
+    user_obj = json_req.get("user_obj")
+    id = json_req.get("id")
+    data = dict()
+    user_obj = DatabaseModel.get_document(user.objects,{'name':'','email':""})
+    if user_obj:
+        data['is_created'] = False
+        data['error'] = "user Already Present"
+        return data
+    else:
+        DatabaseModel.save_documents(user,{'name':user_obj['name'],'email':user_obj['email'],'role':user_obj['role'],'client_id':ObjectId(user_obj['id'])})
+        
+def categoryLevelForChildCategory(request):
+    json_req = JSONParser().parse(request)
+    dist_i = dict()
+    dist_i['level'] = json_req['category_level']
+    dist_i['category_id'] = json_req['category_id']
+    dist_i['category_name'] = ""
+    getCategoryLevelOrder(dist_i)
+    return dist_i
+
+def obtainClientName(request):
+    client_id = get_current_client()
+    client_obj = DatabaseModel.get_document(client.objects,{'id':client_id})
+    data = dict()
+    data['logo'] = ""
+    data['name'] = ""
+    if client_obj:
+        data['name'] = client_obj.name
+        data['logo'] = client_obj.logo
     return data
