@@ -66,10 +66,12 @@ class category_count(Document):
 class level_five_category(Document):
     name = fields.StringField(required=True)
     category_number = fields.StringField()
+    client_id = fields.ReferenceField(client)
     def save(self, *args, **kwargs):
         from .global_service import DatabaseModel
         from .custom_middleware import get_current_client
         client_id = ObjectId(get_current_client())
+        self.client_id = ObjectId(client_id)
         category_count_obj = DatabaseModel.get_document(category_count.objects,{'client_id':client_id})
         category_number_var = 0
         if category_count_obj:
@@ -85,12 +87,13 @@ class level_five_category(Document):
 class level_four_category(Document):
     name = fields.StringField(required=True)
     category_number = fields.StringField()
-    
+    client_id = fields.ReferenceField(client)
     level_five_category_list = fields.ListField(fields.ReferenceField(level_five_category),default = [])
     def save(self, *args, **kwargs):
         from .global_service import DatabaseModel
         from .custom_middleware import get_current_client
         client_id = ObjectId(get_current_client())
+        self.client_id = ObjectId(client_id)
         category_count_obj = DatabaseModel.get_document(category_count.objects,{'client_id':client_id})
         category_number_var = 0
         if category_count_obj:
@@ -106,6 +109,7 @@ class level_four_category(Document):
 class level_three_category(Document):
     name = fields.StringField(required=True)
     category_number = fields.StringField()
+    client_id = fields.ReferenceField(client)
     
     level_four_category_list = fields.ListField(fields.ReferenceField(level_four_category),default = [])
     def save(self, *args, **kwargs):
@@ -121,20 +125,24 @@ class level_three_category(Document):
         else:
             DatabaseModel.save_documents(category_count,{'client_id':client_id,"category_count_int":1})
             category_number_var = 1
+        self.client_id = ObjectId(client_id)
         self.category_number = 'CAT-4-'+str(category_number_var)
         return super(level_three_category, self).save(*args, **kwargs)
 
 class level_two_category(Document):
     name = fields.StringField(required=True)
     category_number = fields.StringField()
+    client_id = fields.ReferenceField(client)
     
     level_three_category_list = fields.ListField(fields.ReferenceField(level_three_category),default = [])
     def save(self, *args, **kwargs):
         from .global_service import DatabaseModel
         from .custom_middleware import get_current_client
         client_id = ObjectId(get_current_client())
+        self.client_id = ObjectId(client_id)
         category_count_obj = DatabaseModel.get_document(category_count.objects,{'client_id':client_id})
         category_number_var = 0
+        self.client_id = ObjectId(client_id)
         if category_count_obj:
             category_count_obj.category_count_int += 1
             category_number_var = category_count_obj.category_count_int
@@ -148,12 +156,13 @@ class level_two_category(Document):
 class level_one_category(Document):
     name = fields.StringField(required=True)
     category_number = fields.StringField()
-    
+    client_id = fields.ReferenceField(client)
     level_two_category_list = fields.ListField(fields.ReferenceField(level_two_category),default = [])
     def save(self, *args, **kwargs):
         from .global_service import DatabaseModel
         from .custom_middleware import get_current_client
         client_id = ObjectId(get_current_client())
+        self.client_id = ObjectId(client_id)
         category_count_obj = DatabaseModel.get_document(category_count.objects,{'client_id':client_id})
         category_number_var = 0
         if category_count_obj:
