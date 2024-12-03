@@ -115,9 +115,9 @@ import threading
 _thread_locals = threading.local()
 
 def get_current_user():
-    """Access the current user in thread-local storage."""
     return getattr(_thread_locals, 'user_login_id', None)
-
+def get_current_client():
+    return getattr(_thread_locals, 'client_id', None)
 class CustomMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -126,10 +126,20 @@ class CustomMiddleware:
         response = createJsonResponse(request)
         try:
             user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
+            client_id = request.META.get('client_id')
+            print("..........",client_id)
             _thread_locals.user_login_id = user_login_id
             user_login_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
             if user_login_obj != None:
                 role = user_login_obj.role
+                if user_login_obj.role == 'super-admin':
+                    # _thread_locals.login_client_id = str("super-admin")
+                    client_id = ""
+                else:
+                    # _thread_locals.login_client_id = str(user_data_obj.client_id.id)
+                    client_id = str(user_login_obj.client_id.id)
+                _thread_locals.client_id = client_id
+                
                 # refresh_cookies(request, response)
                 if check_role_and_capability(request, role):
                     res = self.get_response(request)

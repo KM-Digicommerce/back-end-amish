@@ -23,6 +23,12 @@ def loginUser(request):
         valid = False
     else:
         role_name = user_data_obj.role
+        if user_data_obj.role == 'super-admin':
+            # _thread_locals.login_client_id = str("super-admin")
+            client_id = ""
+        else:
+            # _thread_locals.login_client_id = str(user_data_obj.client_id.id)
+            client_id = str(user_data_obj.client_id.id)
         payload = {
             'id': str(user_data_obj.id),
             'first_name': user_data_obj.name,
@@ -37,6 +43,7 @@ def loginUser(request):
         createCookies(token, response)
         response.data['data']['user_login_id'] = str(user_data_obj.id)
         response.data['data']['user_role'] = str(user_data_obj.role)
+        response.data['data']['client_id'] = str(client_id)
         csrf.get_token(request)
     response.data['data']['valid'] = valid
     return response
