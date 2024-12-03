@@ -67,7 +67,7 @@ def createCategory(request):
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
-    category_obj = DatabaseModel.get_document(category.objects,{'name':name,client_id:ObjectId(client_id)})
+    category_obj = DatabaseModel.get_document(category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if category_obj :
         data['is_created'] = False
@@ -82,11 +82,12 @@ def createCategory(request):
 
 @csrf_exempt
 def createCategory1(request):
+    client_id = get_current_client()
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
     category_id = json_req.get("category_id")
-    level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':name})
+    level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if level_one_category_obj :
         category_obj = DatabaseModel.get_document(category.objects,{'level_one_category_list__in':level_one_category_obj.id})
@@ -104,11 +105,12 @@ def createCategory1(request):
 
 @csrf_exempt
 def createCategory2(request):
+    client_id = get_current_client()
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
     category_id = json_req.get("category_id")
-    level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':name})
+    level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if level_two_category_obj :
         category_obj = DatabaseModel.get_document(category.objects,{'level_two_category_list__in':level_two_category_obj.id})
@@ -126,11 +128,13 @@ def createCategory2(request):
 
 @csrf_exempt
 def createCategory3(request):
+    client_id = get_current_client()
+    
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
     section_id = json_req.get("category_id")
-    level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':name})
+    level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if level_three_category_obj :
         category_obj = DatabaseModel.get_document(category.objects,{'level_three_category_list__in':level_three_category_obj.id})
@@ -148,11 +152,13 @@ def createCategory3(request):
 
 @csrf_exempt
 def createCategory4(request):
+    client_id = get_current_client()
+    
     json_req = JSONParser().parse(request)
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     name = json_req.get("name").title()
     section_id = json_req.get("category_id")
-    level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':name})
+    level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if level_four_category_obj :
         category_obj = DatabaseModel.get_document(category.objects,{'level_four_category_list__in':level_four_category_obj.id})
@@ -170,11 +176,13 @@ def createCategory4(request):
 
 @csrf_exempt
 def createCategory5(request):
+    client_id = get_current_client()
+    
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     json_req = JSONParser().parse(request)
     name = json_req.get("name").title()
     section_id = json_req.get("category_id")
-    level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':name})
+    level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':name,'client_id':ObjectId(client_id)})
     data = dict()
     if level_five_category_obj :
         category_obj = DatabaseModel.get_document(category.objects,{'level_five_category_list__in':level_five_category_obj.id})
@@ -2193,6 +2201,7 @@ def obtainClientDetail(request):
         data['client_obj'] = client_list
     return data
 
+@csrf_exempt
 def addUserAndRoleForClient(request):
     json_req = JSONParser().parse(request)
     user_obj = json_req.get("user_obj")
