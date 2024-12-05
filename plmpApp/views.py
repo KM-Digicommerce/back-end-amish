@@ -747,6 +747,10 @@ def productUpdate(request):
     products_obj.base_price = base_price
     products_obj.msrp = msrp
     products_obj.save()
+    for i in products_obj.options:
+        i.finished_price
+        i.total_price = str(float(i.finished_price) + float(products_obj.base_price))
+        i.save()
     logForCreateProduct(product_id,user_login_id,"update")
     data = dict()
     data['is_updated'] = True
@@ -1268,7 +1272,8 @@ def createValueForVarientName(request):
         type_value_id = type_value_obj.id
     else:
         type_value_id = DatabaseModel.save_documents(type_value,{'name':name})
-    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,'option_value_id_list__in':[type_value_id],client_id:ObjectId(client_id)})
+    print(option_id,client_id,type_value_id)
+    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,"client_id":ObjectId(client_id),'option_value_id_list__in':[ObjectId(type_value_id)]})
     if varient_option_obj:
         data['is_created'] = False
         data['error'] = "Value Already Present In This Varient Option"
@@ -1721,7 +1726,6 @@ def obtainProductVarientLog(request):
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         data['result'] = result[0]['product_varient_log_list']
         data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
-        
         return data
     return data
 
@@ -1753,7 +1757,7 @@ def obtainBrand(request):
     {
             '$group': {
                 "_id":None,
-                "brand_list":{'$push':{"id":"$_id",'name':'$name','brand_number':'$brand_number'}}
+                "brand_list":{'$push':{"id":"$_id",'name':'$name','brand_number':'$brand_number','logo':'$logo'}}
         }
         }
     ]
@@ -1840,6 +1844,8 @@ def saveXlData(request):
     Key_Features_key = field_data.get('Key Features')
     category_level_key = field_data.get('category level')
     stockv_key = field_data.get('stockv')
+    client_id = get_current_client()
+    
     try:
         with open(file_path, 'r') as file:
             if file.name.endswith('.xlsx'):
@@ -1902,7 +1908,7 @@ def saveXlData(request):
             if isinstance(option_name, str) :
                 options.append({"name":option_name,"value": option_value})
             option_number += 1
-        product_obj = DatabaseModel.get_document(products.objects,{"model":model})
+        product_obj = DatabaseModel.get_document(products.objects,{"model":model,'client_id':ObjectId(client_id)})
         if product_obj==None:
             category_list = []
             if isinstance(category_level, str):
@@ -1911,36 +1917,36 @@ def saveXlData(request):
             for index,i in enumerate(category_list):
                 i = i.title()
                 if index == 0:
-                    category_obj = DatabaseModel.get_document(category.objects,{'name':i})
+                    category_obj = DatabaseModel.get_document(category.objects,{'name':i,'client_id':client_id})
                     if category_obj == None:
                         category_obj = DatabaseModel.save_documents(category,{'name':i})
                     previous_category_id = category_obj.id
                 if index == 1:
-                    level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':i})
+                    level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':i,'client_id':client_id})
                     if level_one_category_obj == None:
                         level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':i})
                     DatabaseModel.update_documents(category.objects,{"id":previous_category_id},{"push__level_one_category_list":level_one_category_obj.id})
                     previous_category_id = level_one_category_obj.id
                 if index == 2:
-                    level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':i})
+                    level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':i,'client_id':client_id})
                     if level_two_category_obj == None:
                         level_two_category_obj = DatabaseModel.save_documents(level_two_category,{'name':i})
                     DatabaseModel.update_documents(level_one_category.objects,{"id":previous_category_id},{"push__level_two_category_list":level_two_category_obj.id})
                     previous_category_id = level_two_category_obj.id
                 if index == 3:
-                    level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':i})
+                    level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':i,'client_id':client_id})
                     if level_three_category_obj == None:
                         level_three_category_obj = DatabaseModel.save_documents(level_three_category,{'name':i})
                     DatabaseModel.update_documents(level_two_category.objects,{"id":previous_category_id},{"push__level_three_category_list":level_three_category_obj.id})
                     previous_category_id = level_three_category_obj.id
                 if index == 4:
-                    level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':i})
+                    level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':i,'client_id':client_id})
                     if level_four_category_obj == None:
                         level_four_category_obj = DatabaseModel.save_documents(level_four_category,{'name':i})
                     DatabaseModel.update_documents(level_three_category.objects,{"id":previous_category_id},{"push__level_four_category_list":level_four_category_obj.id})
                     previous_category_id = level_four_category_obj.id
                 if index == 5:
-                    level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':i})
+                    level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':i,'client_id':client_id})
                     if level_five_category_obj == None:
                         level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':i})
                     DatabaseModel.update_documents(level_four_category.objects,{"id":previous_category_id},{"push__level_five_category_list":level_five_category_obj.id})
