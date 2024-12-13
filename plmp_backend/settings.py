@@ -25,6 +25,7 @@ SECRET_KEY = 'django-insecure-)1p(h4i8wd0jham0iwr2o0c_^z8sj&2f+w&7gzj8jf&ug3j1&k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+ALLOWED_HOSTS = ['*']
 
 from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 from mongoengine import connect
@@ -33,9 +34,13 @@ connect(
     host=MONGODB_HOST_1
 )
 
-# ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"]
 
-
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = True
+# CSRF_COOKIE_SECURE = True
+CORS_ORIGIN_WHITELIST = ['*']
 # CORS_ALLOWED_ORIGINS = ["http://192.168.1.10:3000"]
 
 # settings.py
@@ -61,7 +66,9 @@ CACHES = {
         }
     }
 }
-
+SESSION_COOKIE_SECURE = False  # Set to True in production if using HTTPS
+CSRF_COOKIE_SECURE = False  # Set to True in production if using HTTPS
+CSRF_COOKIE_SAMESITE = 'None'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -104,28 +111,22 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'plmp_backend.wsgi.application'
-ALLOWED_HOSTS = ['*']
-CORS_ALLOW_ALL_ORIGINS = False  # Use specific origins
-CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",      # Frontend running locally
-    "http://127.0.0.1:3000", 
-    "http://192.168.1.13:8001",# Alternate localhost
-    front_end_ip,      # Replace with actual frontend IP
+    "http://localhost:3000",
+    front_end_ip,
 ]
 
-# CSRF Settings
+
+CORS_ALLOW_CREDENTIALS = True
+
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://192.168.1.13:8001",
-    front_end_ip,      # Replace with actual frontend IP
+    front_end_ip,
 ]
 
-# Secure cookies (use in production)
-CSRF_COOKIE_SECURE = False  # Change to True in production with HTTPS
-SESSION_COOKIE_SECURE = False  # Change to True in production with HTTPS
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -173,4 +174,5 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
