@@ -228,6 +228,7 @@ class product_varient(Document):
     un_finished_price = fields.StringField()
     quantity = fields.StringField()
     total_price = fields.StringField()
+    retail_price = fields.StringField()
 
 class products(Document):
     model = fields.StringField()
@@ -397,3 +398,20 @@ class xl_mapping(Document):
     data= fields.DictField()
     user_id = fields.ReferenceField(user)
 
+class brand_category_price(Document):
+    brand_id = fields.ReferenceField(brand)
+    category_id = fields.StringField()
+    price = fields.StringField()
+    is_active = fields.BooleanField(default=False)
+    price_option = fields.StringField()
+    
+    
+class radialPriceLog(Document):
+    product_varient_id = fields.ReferenceField(product_varient)
+    old_retail_price = fields.StringField()
+    new_retail_price = fields.StringField()
+    user_id = fields.ReferenceField(user)
+    log_date = fields.DateTimeField(default=datetime.now)
+
+
+    
