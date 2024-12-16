@@ -23,8 +23,9 @@ from .models import xl_mapping
 from .models import brand
 from .models import client
 from .models import brand_category_price
-from .models import radialPriceLog
+from .models import radial_price_log
 
+from plmp_backend.env import MONGODB_COURSE_DB_NAME
 from django.http import HttpResponse
 from openpyxl import Workbook
 import pandas as pd
@@ -1986,11 +1987,15 @@ def saveXlData(request):
             product_id = product_obj.id
         product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'product_id':product_id})
         cat_retail_price = 1
+        retail_price = 0
         if product_category_config_obj:
             category_id = product_category_config_obj.category_id
             brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':ObjectId(category_id),'brand_id':ObjectId(product_obj.brand),'is_active':True})
             cat_retail_price = brand_category_price_obj.price
-        retail_price = Finished_Price * cat_retail_price
+            if brand_category_price_obj.price_option == 'finished_price':
+                retail_price = Finished_Price * cat_retail_price
+            else:
+                retail_price = Un_Finished_Price * cat_retail_price
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in options:
@@ -2355,7 +2360,7 @@ def createBrandCategoryWisePrice(json_req):
             DatabaseModel.update_documents(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True},{'is_active':False})
         brand_category_price_obj_ch = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'price':json_req['price'],'price_option':json_req['price_option']})
         if brand_category_price_obj_ch:
-            DatabaseModel.update_documents(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True},{'is_active':True})
+            DatabaseModel.update_documents(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'price':json_req['price'],'price_option':json_req['price_option']},{'is_active':True})
         else:
             DatabaseModel.save_documents(brand_category_price,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True,'price':str(json_req['price']),'price_option':json_req['price_option']})
     if len(brand_category_price_obj_1) == 0:
@@ -2364,7 +2369,9 @@ def createBrandCategoryWisePrice(json_req):
     data = dict()
     data['is_created'] = True
     return data
-    
+
+from bson.dbref import DBRef
+
 @csrf_exempt
 def updateRetailPrice(request):
     json_req = JSONParser().parse(request)
@@ -2373,23 +2380,28 @@ def updateRetailPrice(request):
     createBrandCategoryWisePrice(json_req)
     for i in product_category_config_list:
         for j in i.product_id.options:
-            print(i.category_id)
+            print("......",i.product_id.id)
             brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
-            old_price = j.retail_price if 'retail_price' in j else '0'
+            if isinstance(j, DBRef):
+                # Dereference and access the data
+                old_price = '0'
+                j.retail_price = json_req['price']
+            else:
+                old_price = j.retail_price if 'retail_price' in j else '0'
             if brand_category_price_obj:
                 if brand_category_price_obj.price_option == "finished_price":
                     print(j.finished_price,json_req['price'])
-                    if j.finished_price == '':
+                    if j.finished_price == '' or j.finished_price =='None'or j.finished_price ==None:
                         j.finished_price = '0' 
                     j.retail_price = str(float(j.finished_price) * float(json_req['price']))
                 else:
-                    if j.un_finished_price == '':
-                        j.finished_price = '0'
+                    if j.un_finished_price == '' or j.un_finished_price =='None' or j.un_finished_price ==None:
+                        j.un_finished_price = '0'
                     j.retail_price = str(float(j.un_finished_price) * float(json_req['price']))
             if j.retail_price == None:
                 j.retail_price = "0"
             j.save()
-            createradialPriceLog(j.id,str(old_price),str(j.retail_price),user_login_id)
+            createradial_price_log(j.id,str(old_price),str(j.retail_price),user_login_id)
     data = dict()
     data['is_updated'] = True
     return data
@@ -2400,36 +2412,45 @@ def obtainBrandCategoryWisePriceTable(request):
     json_req = JSONParser().parse(request)
     brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id_list'],'brand_id':ObjectId(json_req['brand_id'])})
     data = dict()
+    data['category_list'] = list()
     print(">>>>>>>>>>>>",brand_category_price_obj_list)
-    for i in  brand_category_price_obj_list:
-        brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':i.category_id,'brand_id':ObjectId(json_req['brand_id'])})
-        category_obj = DatabaseModel.get_document(category.objects,{'id':i.category_id})
+    print(">>>>>>>>>>>>>>>>>>>>>>",brand_category_price_obj_list)
+    for brand_category_price_obj in  brand_category_price_obj_list:
+        category_obj = DatabaseModel.get_document(category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
-            category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':i.category_id})
+            category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
-            category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':i.category_id})
+            category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
-            category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':i.category_id})
+            category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
-            category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':i.category_id})
+            category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
-            category_obj = DatabaseModel.get_document(level_five_category.objects,{'id':i.category_id})
-        if str(category_obj.id) in data:
-            data[str(i.category_id)].append({"category_name":str(category_obj.name),"id":str(brand_category_price_obj.id),"price":brand_category_price_obj.price,"is_active":brand_category_price_obj.is_active})
-        else:
-            data[str(i.category_id)]=[{"category_name":str(category_obj.name),"id":str(brand_category_price_obj.id),"price":brand_category_price_obj.price,"is_active":brand_category_price_obj.is_active}]
+            category_obj = DatabaseModel.get_document(level_five_category.objects,{'id':brand_category_price_obj.category_id})
+        data['category_list'].append({"category_name":str(category_obj.name),"id":str(brand_category_price_obj.category_id),"price":brand_category_price_obj.price,"brand_name":brand_category_price_obj.brand_id.name,"brand_id":str(brand_category_price_obj.brand_id.id),"is_active":brand_category_price_obj.is_active,'brand_category_price_id':str(brand_category_price_obj.id),'price_option':brand_category_price_obj.price_option})
+    data['category_list'] = sorted(data['category_list'], key=lambda x: ObjectId(x['brand_category_price_id']),reverse=True)
+
     return data
 
 
-def createradialPriceLog(product_varient_id,old_retail_price,new_retail_price,user_login_id):
-    DatabaseModel.save_documents(radialPriceLog,{"product_varient_id":product_varient_id,'old_retail_price':old_retail_price,'new_retail_price':new_retail_price,'user_id':ObjectId(user_login_id)})
+def createradial_price_log(product_varient_id,old_retail_price,new_retail_price,user_login_id):
+    DatabaseModel.save_documents(radial_price_log,{"product_varient_id":product_varient_id,'old_retail_price':old_retail_price,'new_retail_price':new_retail_price,'user_id':ObjectId(user_login_id)})
     return 1
 
 @csrf_exempt
-def updateActiveRadialPrice(request):
+def updateActiveRetailPrice(request):
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>")
     json_req = JSONParser().parse(request)
-    brand_category_price_obj_1 = DatabaseModel.update_documents(brand_category_price.objects,{'category_id':json_req['category_id'],'is_active':True},{'is_active':False})
-    brand_category_price_obj_2 = DatabaseModel.update_documents(brand_category_price.objects,{'category_id':json_req['category_id_list'],'price':ObjectId(json_req['price'])},{'is_active':True})
+    brand_category_price_obj_1 = DatabaseModel.update_documents(brand_category_price.objects,{'category_id':json_req['category_id'],'brand_id':json_req['brand_id'],'is_active':True},{'is_active':False})
+    brand_category_price_obj_2 = DatabaseModel.update_documents(brand_category_price.objects,{'category_id':json_req['category_id'],'brand_id':json_req['brand_id'],'price':str(json_req['price'])},{'is_active':True})
     data = dict()
     data['is_updated'] = True
     return data
+
+def obtainRetailPriceLog(request):
+    radial_price_log_list = DatabaseModel.list_documents(radial_price_log.objects,{})
+    data = dict()
+    data['radial_price_log_list'] = True
+    
+    return data
+    
