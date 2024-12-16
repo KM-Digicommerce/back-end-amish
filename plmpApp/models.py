@@ -412,6 +412,6 @@ class radial_price_log(Document):
     new_retail_price = fields.StringField()
     user_id = fields.ReferenceField(user)
     log_date = fields.DateTimeField(default=datetime.now)
-
+    client_id = fields.ReferenceField(client)
 
     
