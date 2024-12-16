@@ -228,7 +228,7 @@ class product_varient(Document):
     un_finished_price = fields.StringField()
     quantity = fields.StringField()
     total_price = fields.StringField()
-    retail_price = fields.StringField()
+    retail_price = fields.StringField(default="0")
 
 class products(Document):
     model = fields.StringField()
@@ -406,7 +406,7 @@ class brand_category_price(Document):
     price_option = fields.StringField()
     
     
-class radialPriceLog(Document):
+class radial_price_log(Document):
     product_varient_id = fields.ReferenceField(product_varient)
     old_retail_price = fields.StringField()
     new_retail_price = fields.StringField()

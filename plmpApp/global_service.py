@@ -9,16 +9,16 @@ class DatabaseModel:
     @staticmethod
     def get_document(queryset, filter={}, field_list=[]):
         try:
-            if isinstance(queryset, QuerySet):
-                queryset_name = queryset._document.__name__
-                cache_key = f"{queryset_name}:get:{str(filter)}:{str(field_list)}"
-                cached_data = DatabaseModel.redis_client.get(cache_key)
-                if cached_data:
-                    return pickle.loads(cached_data)
+            # if isinstance(queryset, QuerySet):
+            #     queryset_name = queryset._document.__name__
+            #     cache_key = f"{queryset_name}:get:{str(filter)}:{str(field_list)}"
+            #     cached_data = DatabaseModel.redis_client.get(cache_key)
+            #     if cached_data:
+            #         return pickle.loads(cached_data)
             data = queryset.filter(**filter).only(*field_list).limit(1)
             if data:
                 data = data[0]
-                DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
+                # DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
                 return data
             else:
                 return None
@@ -29,15 +29,15 @@ class DatabaseModel:
     @staticmethod
     def list_documents(queryset, filter={}, field_list=[], sort_list=[], lower_limit=None, upper_limit=None):
         try:
-            if isinstance(queryset, QuerySet):
-                queryset_name = queryset._document.__name__
-                cache_key = f"{queryset_name}:list:{str(filter)}:{str(field_list)}"
-                cached_data = DatabaseModel.redis_client.get(cache_key)
-                if cached_data:
-                    return pickle.loads(cached_data)
+            # if isinstance(queryset, QuerySet):
+            #     queryset_name = queryset._document.__name__
+            #     cache_key = f"{queryset_name}:list:{str(filter)}:{str(field_list)}"
+            #     cached_data = DatabaseModel.redis_client.get(cache_key)
+            #     if cached_data:
+            #         return pickle.loads(cached_data)
             data = queryset(**filter).skip(lower_limit).limit(upper_limit - lower_limit if lower_limit is not None and upper_limit is not None else None).only(*field_list).order_by(*sort_list)
             if data:
-                DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
+                # DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
                 return data
             else:
                 return []  
