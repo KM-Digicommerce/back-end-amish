@@ -126,8 +126,6 @@ class CustomMiddleware:
         response = createJsonResponse(request)
         try:
             user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
-            client_id = request.META.get('client_id')
-            print("..........",client_id)
             _thread_locals.user_login_id = user_login_id
             user_login_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
             if user_login_obj != None:

@@ -241,8 +241,9 @@ def createProduct(request):
     if brand_category_price_obj:
         cat_retail_price = brand_category_price_obj.price
     for z in product_obj['varients']:
-        retail_price = str(float(z['finished_price']) * float(cat_retail_price))
+        retail_price = str(z['retail_price']) 
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity'],'retail_price':retail_price})
+        createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in z['options']:
             product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
@@ -725,6 +726,14 @@ def obtainProductDetails(request):
         i = dict()
         i['level'] = result['category_name']
         i['category_id'] = result['category_id']
+        brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':i['category_id'],'brand_id':result['product_obj']['brand_id'],'is_active':True})
+        result['category_brand_price'] = dict()
+        if brand_category_price_obj:
+            result['category_brand_price']['price'] = brand_category_price_obj.price
+            result['category_brand_price']['price_option'] = brand_category_price_obj.price_option
+        else:
+            result['category_brand_price']['price'] = 0
+            result['category_brand_price']['price_option'] = ""
         print(i)
         getCategoryLevelOrder(i)
         result['category_level'] = i['category_name']
@@ -756,10 +765,10 @@ def productUpdate(request):
     products_obj.base_price = base_price
     products_obj.msrp = msrp
     products_obj.save()
-    for i in products_obj.options:
-        i.finished_price
-        i.total_price = str(float(i.finished_price) + float(products_obj.base_price))
-        i.save()
+    # for i in products_obj.options:
+    #     i.finished_price
+    #     # i.retail_price = str(float(i.finished_price) + float(products_obj.base_price))
+    #     i.save()
     logForCreateProduct(product_id,user_login_id,"update")
     data = dict()
     data['is_updated'] = True
@@ -1281,7 +1290,7 @@ def createValueForVarientName(request):
     if type_value_obj:
         type_value_id = type_value_obj.id
     else:
-        type_value_id = DatabaseModel.save_documents(type_value,{'name':name})
+        type_value_id = DatabaseModel.save_documents(type_value,{'name':name}).id
     print(option_id,client_id,type_value_id)
     varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,"client_id":ObjectId(client_id),'option_value_id_list__in':[ObjectId(type_value_id)]})
     if varient_option_obj:
@@ -1414,11 +1423,13 @@ def createAndAddVarient(request):
     json_req = JSONParser().parse(request)
     product_id = json_req.get("product_id")
     varient_obj = json_req.get("varient_obj")
-    product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":varient_obj['sku_number'],"finished_price":str(varient_obj['finished_price']),"un_finished_price":str(varient_obj['un_finished_price']),"quantity":varient_obj['quantity'],"total_price":str(varient_obj['total_price'])})
+    client_id = get_current_client()
+    product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":varient_obj['sku_number'],"finished_price":str(varient_obj['finished_price']),"un_finished_price":str(varient_obj['un_finished_price']),"quantity":varient_obj['quantity'],"retail_price":str(varient_obj['retail_price'])})
     for i in varient_obj['options']:
         product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
         DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
     logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
+    createradial_price_log(product_varient_obj.id,"0",str(varient_obj['retail_price']),user_login_id,client_id)
     DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id})
     data['status'] = True
     return data
@@ -1831,7 +1842,7 @@ def saveXlData(request):
     field_data = request.POST.get('field_data')
     file_path = request.POST.get('file_path')
     data['status'] = False
-    
+    print(">>>>>>>>>>>>>>>>>>>>>>>>",1)
     field_data = json.loads(field_data)
     xl_mapping_obj = DatabaseModel.get_document(xl_mapping.objects,{'user_id':user_login_id})
     if xl_mapping_obj:
@@ -1855,7 +1866,7 @@ def saveXlData(request):
     category_level_key = field_data.get('category level')
     stockv_key = field_data.get('stockv')
     client_id = get_current_client()
-    
+    print(file_path)
     try:
         with open(file_path, 'r') as file:
             if file.name.endswith('.xlsx'):
@@ -1919,7 +1930,9 @@ def saveXlData(request):
                 options.append({"name":option_name,"value": option_value})
             option_number += 1
         product_obj = DatabaseModel.get_document(products.objects,{"model":model,'client_id':ObjectId(client_id)})
+        print(">>>>>>>>>>>>>>>>>>>>>>>>",product_obj)
         if product_obj==None:
+            
             category_list = []
             if isinstance(category_level, str):
                 category_list = [item.strip() for item in category_level.split('>')]
@@ -1997,6 +2010,8 @@ def saveXlData(request):
             else:
                 retail_price = Un_Finished_Price * cat_retail_price
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
+        createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
+        
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in options:
             type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':i['name'].title()})
@@ -2011,6 +2026,7 @@ def saveXlData(request):
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
         DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'add_to_set__image':image_str_list})
     file_path = "/home/dell/PLMP/plmp_backend/uploads"
+    print(">>>>>>>>>>>>>>>>>>>>>>>>",2)
     try:
         if os.path.exists(file_path) and os.path.isdir(file_path):
             shutil.rmtree(file_path)
@@ -2026,62 +2042,18 @@ def saveXlData(request):
 def obtainPriceLog(request):
     data = dict()
     client_id = get_current_client()
-    filter_obj = {}
-    pipeline = [
-    {
-            "$match": filter_obj
-        },
+    radial_price_log_list = DatabaseModel.list_documents(radial_price_log.objects,{'client_id':client_id})
+    data = dict()
+    data['radial_price_log_list']  = list()
+    for i in radial_price_log_list:
+        data['radial_price_log_list'].append(
         {
-            '$lookup': {
-                'from': 'products',
-                'localField': 'product_id',
-                'foreignField': '_id',
-                'as': 'product_ins'
-        }
-        },
-        {
-            '$unwind': {
-                'path': '$product_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        },{
-            "$match":{'product_ins.client_id':ObjectId(client_id)}
-        }, {
-            '$lookup': {
-                'from': 'user',
-                'localField': 'user_id',
-                'foreignField': '_id',
-                'as': 'user_ins'
-        }
-        },
-        {
-            '$unwind': {
-                'path': '$user_ins',
-                'preserveNullAndEmptyArrays': True
-            }
-        },
-        {
-            '$group': {
-                "_id":None,
-                "price_log":{'$push':{"price name":"$name","user_name":"$user_ins.name",'product_name':'$product_ins.product_name','action':'$action',
-                'log_date':'$log_date',
-                'previous_price':'$previous_price',
-                'current_price':'$current_price'
-                }}
-        }
-        }
-        ]
-    result = list(price_log.objects.aggregate(*pipeline))
-    data['result'] = dict()
-    if result:
-        for i in result[0]['price_log']:
-            original_date = i['log_date'] 
-            i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
-            i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
-        data['result'] = result[0]['price_log']
-        data['result'] = sorted(data['result'], key=lambda x: x['log_date'],reverse=True)
-        
-        return data
+        "sku_number" : i.product_varient_id.sku_number,
+        "old_retail_price" : i.old_retail_price,
+        "new_retail_price" : i.new_retail_price,
+        "user_id" : i.user_id.name,
+        "log_date" : i.log_date   
+        })
     return data
 import requests
 from bs4 import BeautifulSoup
@@ -2401,7 +2373,9 @@ def updateRetailPrice(request):
             if j.retail_price == None:
                 j.retail_price = "0"
             j.save()
-            createradial_price_log(j.id,str(old_price),str(j.retail_price),user_login_id)
+            client_id = get_current_client()
+            
+            createradial_price_log(j.id,str(old_price),str(j.retail_price),user_login_id,client_id)
     data = dict()
     data['is_updated'] = True
     return data
@@ -2410,11 +2384,12 @@ def updateRetailPrice(request):
 @csrf_exempt
 def obtainBrandCategoryWisePriceTable(request):
     json_req = JSONParser().parse(request)
-    brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id_list'],'brand_id':ObjectId(json_req['brand_id'])})
+    if json_req.get('category_id_list') == None:
+        brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'brand_id':ObjectId(json_req['brand_id'])})
+    else:
+        brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id_list'],'brand_id':ObjectId(json_req['brand_id'])})
     data = dict()
     data['category_list'] = list()
-    print(">>>>>>>>>>>>",brand_category_price_obj_list)
-    print(">>>>>>>>>>>>>>>>>>>>>>",brand_category_price_obj_list)
     for brand_category_price_obj in  brand_category_price_obj_list:
         category_obj = DatabaseModel.get_document(category.objects,{'id':brand_category_price_obj.category_id})
         if category_obj == None:
@@ -2433,8 +2408,8 @@ def obtainBrandCategoryWisePriceTable(request):
     return data
 
 
-def createradial_price_log(product_varient_id,old_retail_price,new_retail_price,user_login_id):
-    DatabaseModel.save_documents(radial_price_log,{"product_varient_id":product_varient_id,'old_retail_price':old_retail_price,'new_retail_price':new_retail_price,'user_id':ObjectId(user_login_id)})
+def createradial_price_log(product_varient_id,old_retail_price,new_retail_price,user_login_id,client_id):
+    DatabaseModel.save_documents(radial_price_log,{"product_varient_id":product_varient_id,'old_retail_price':old_retail_price,'new_retail_price':new_retail_price,'user_id':ObjectId(user_login_id),'client_id':ObjectId(client_id)})
     return 1
 
 @csrf_exempt
@@ -2446,11 +2421,20 @@ def updateActiveRetailPrice(request):
     data = dict()
     data['is_updated'] = True
     return data
-
-def obtainRetailPriceLog(request):
-    radial_price_log_list = DatabaseModel.list_documents(radial_price_log.objects,{})
+    
+@csrf_exempt
+def obtainRetailBrandPrice(request):
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    json_req = JSONParser().parse(request)
+    brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
     data = dict()
-    data['radial_price_log_list'] = True
-    
+    if brand_category_price_obj:
+        data['price'] = brand_category_price_obj.price
+        data['price_option'] = brand_category_price_obj.price_option
+    else:
+        data['price'] = 0
+        data['price_option'] = ""
     return data
-    
+
+
+
