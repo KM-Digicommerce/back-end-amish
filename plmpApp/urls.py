@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,sampleData,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,createUser,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -32,7 +32,7 @@ urlpatterns = [
     path('createVarientOption/', createVarientOption, name='createVarientOption'),
     path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName'),
     path('obtainDashboardCount/', obtainDashboardCount, name='obtainDashboardCount'),
-    path('sampleData/', sampleData, name='sampleData'),
+    path('createUser/', createUser, name='createUser'),
     path('createAndAddVarient/', createAndAddVarient, name='createAndAddVarient'),
     path('swapProductToCategory/', swapProductToCategory, name='swapProductToCategory'),
     path('obtainCategoryLog/', obtainCategoryLog, name='obtainCategoryLog'),
