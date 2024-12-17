@@ -236,7 +236,7 @@ def createProduct(request):
     }
     products_obj_1 = DatabaseModel.save_documents(products,product_obj_save)
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
-    brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':ObjectId(category_id),'brand_id':ObjectId(products_obj_1.brand),'is_active':True})
+    brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':ObjectId(category_id),'brand_id':ObjectId(products_obj_1.brand_id.id),'is_active':True})
     cat_retail_price = 1
     if brand_category_price_obj:
         cat_retail_price = brand_category_price_obj.price
