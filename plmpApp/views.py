@@ -2384,7 +2384,10 @@ def obtainBrandCategoryWisePriceTable(request):
     if json_req.get('category_id_list') == None:
         brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'brand_id':ObjectId(json_req['brand_id'])})
     else:
-        brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id_list'],'brand_id':ObjectId(json_req['brand_id'])})
+        if json_req['category_id_list'] == []:
+            brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'brand_id':ObjectId(json_req['brand_id'])})
+        else:
+            brand_category_price_obj_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id_list'],'brand_id':ObjectId(json_req['brand_id'])})
     data = dict()
     data['category_list'] = list()
     for brand_category_price_obj in  brand_category_price_obj_list:
