@@ -973,8 +973,8 @@ def exportAll(request):
                 "short_description":{ "$first":"$short_description"}, 
                 "brand":{ "$first":"$brand.name"},
                 "breadcrumb":{ "$first":"$breadcrumb"},
-                "msrp":{ "$first":"$msrp"},
-                "base_price":{ "$first":"$base_price"},
+                # "msrp":{ "$first":"$msrp"},
+                "retail_price":{ "$first":"$product_varient_ins.retail_price"},
                 "Tags":{ "$first":"$tags"}, 
                 "Variant SKU":{ "$first":"$product_varient_ins.sku_number"},
                 "Un Finished Price":{ "$first":"$product_varient_ins.un_finished_price"},
@@ -996,8 +996,8 @@ def exportAll(request):
                 "short_description":1, 
                 "brand":1,
                 "breadcrumb":1,
-                "msrp":1,
-                "base_price":1,
+                # "msrp":1,
+                "retail_price":1,
                 "Tags":1, 
                 "Variant SKU":1,
                 "Un Finished Price":1,
@@ -1015,18 +1015,20 @@ def exportAll(request):
     result = list(products.objects.aggregate(*pipeline))
     max_variants = 0
     max_image = 0
+    
     for i in result:
         if max_variants < len(i['varient_option_list']):
             max_variants = len(i['varient_option_list'])
         if i['Image Src'] != None:
             if max_image < len(i['Image Src']):
                 max_image = len(i['Image Src'])
+    print()
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
     headers = [   
     "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
-     "MSRP", "Base Price", "Unfinished Price", "Finished Price"
+    "Retail Price", "Unfinished Price", "Finished Price"
     ]
     variant_headers = []
     for i in range(1, max_variants + 1):
@@ -1055,8 +1057,7 @@ def exportAll(request):
             item.get("brand", ""),
             item.get("short_description", ""),
             item.get("long_description", ""),
-            item.get("msrp", ""),
-            item.get("base_price", ""),
+            item.get("retail_price", ""),
             item.get("Un Finished Price", ""),
             item.get("Finished Price", "")
         ]
