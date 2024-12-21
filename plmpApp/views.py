@@ -2446,7 +2446,9 @@ def createUser(request):
 def obtainVarientOptionForRetailPrice(request):
     data = dict()
     data['varient_option_list'] = []
-    varient_option_list = DatabaseModel.list_documents(varient_option.objects,{})
+    client_id = get_current_client()
+    
+    varient_option_list = DatabaseModel.list_documents(varient_option.objects,{'client_id':ObjectId(client_id)})
     for i in varient_option_list:
         data['varient_option_list'].append({'id':str(i.option_name_id.id),"name":i.option_name_id.name})
     return data
