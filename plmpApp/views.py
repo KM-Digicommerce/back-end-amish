@@ -1066,7 +1066,7 @@ def exportAll(request):
             else:
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
-        row.extend(["","","","","",item.get("retail_price",""),"","","",""])
+        row.extend(["","","","","","",item.get("retail_price",""),"","","",""])
         img_src = item.get("Image Src", [])
         img_src_str = ""
         print(img_src)
