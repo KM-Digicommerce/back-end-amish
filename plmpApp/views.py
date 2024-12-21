@@ -2905,7 +2905,7 @@ def updateRevertPriceForVarientOption(request):
         i[price_option] = float(i[price_option])
         if price_symbol == '%':
             print(i[price_option],brand_category_price_obj_price)
-            i[price_option] = round(i[price_option]/(1+(float(brand_category_price_obj_price)/100.00)))
+            i[price_option] = i[price_option]/(1+(float(brand_category_price_obj_price)/100.00))
         else:
             i[price_option] = float(i[price_option]) - float(brand_category_price_obj_price)
         brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':[i['category_id']],'brand_id':ObjectId(json_req['brand_id']),'is_active':True,'price_option':price_option})
