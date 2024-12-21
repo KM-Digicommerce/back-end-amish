@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,createUser,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,createUser,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice, obtainVarientOptionForRetailPrice, obtainVarientOptionValueForRetailPrice,obtainProductBasedOnVarientOption,saveChangesForVarientOption,obtainRevertPreviousAndCurrentPriceForCategory,obtainRevertPreviousAndCurrentPriceForVarientOption,updateRevertPriceForCategory,updateRevertPriceForVarientOption
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -56,4 +56,13 @@ urlpatterns = [
     path('updateRetailPrice/', updateRetailPrice, name='updateRetailPrice'),
     path('updateActiveRetailPrice/', updateActiveRetailPrice, name='updateActiveRetailPrice'),
     path('obtainRetailBrandPrice/', obtainRetailBrandPrice, name='obtainRetailBrandPrice'),
+    path('obtainVarientOptionForRetailPrice/', obtainVarientOptionForRetailPrice, name='obtainVarientOptionForRetailPrice'),
+    path('obtainVarientOptionValueForRetailPrice/', obtainVarientOptionValueForRetailPrice, name='obtainVarientOptionValueForRetailPrice'),
+    path('obtainProductBasedOnVarientOption/', obtainProductBasedOnVarientOption, name='obtainProductBasedOnVarientOption'),
+    path('saveChangesForVarientOption/', saveChangesForVarientOption, name='saveChangesForVarientOption'),
+    path('obtainRevertPreviousAndCurrentPriceForVarientOption/', obtainRevertPreviousAndCurrentPriceForVarientOption, name='obtainRevertPreviousAndCurrentPriceForVarientOption'),
+    path('obtainRevertPreviousAndCurrentPriceForCategory/', obtainRevertPreviousAndCurrentPriceForCategory, name='obtainRevertPreviousAndCurrentPriceForCategory'),
+    path('updateRevertPriceForCategory/', updateRevertPriceForCategory, name='updateRevertPriceForCategory'),
+    path('updateRevertPriceForVarientOption/', updateRevertPriceForVarientOption, name='updateRevertPriceForVarientOption'),
+    
 ]

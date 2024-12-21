@@ -24,6 +24,7 @@ from .models import brand
 from .models import client
 from .models import brand_category_price
 from .models import radial_price_log
+from .models import revert_varient_retail_price
 
 from plmp_backend.env import MONGODB_COURSE_DB_NAME
 from django.http import HttpResponse
@@ -874,7 +875,6 @@ def obtainAllVarientList(request):
 def exportAll(request):
     category_id = request.GET.get('category_id')
     client_id = get_current_client()
-    
     if category_id:
         category_obj = {'product_category_config_ins.category_id':category_id,"client_id":ObjectId(client_id)}
     else:
@@ -1013,6 +1013,7 @@ def exportAll(request):
     
     ]
     result = list(products.objects.aggregate(*pipeline))
+    print(result)
     max_variants = 0
     max_image = 0
     
@@ -1026,18 +1027,19 @@ def exportAll(request):
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
-    headers = [   
-    "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
-    "Retail Price", "Unfinished Price", "Finished Price"
-    ]
+    # headers = [   
+    # "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
+    # "Retail Price", "Unfinished Price", "Finished Price"
+    # ]
+    headers = ["S.No","Handle","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
     variant_headers = []
     for i in range(1, max_variants + 1):
-        variant_headers.append(f"Variant {i} Name")
-        variant_headers.append(f"Variant {i} Value")
+        variant_headers.append(f"Option{i} Name")
+        variant_headers.append(f"Option{i} Value")
+        variant_headers.append(f"Option{i} Linked To")
     headers.extend(variant_headers)
-    for i in range (1,max_image+1):
-        headers.append(f'Image {i} url')
-    headers.append("stockv")
+    headers.extend(["Variant Grams","Variant Inventory Tracker","Variant Inventory Qty","Variant Inventory Policy","Variant Fulfillment Service","Variant Price","Variant Compare At Price","Variant Requires Shipping","Variant Taxable","Variant Barcode","Image Src","Image Position","Image Alt Text","Gift Card","SEO Title","SEO Description","Google Shopping / Google Product Category","Google Shopping / Gender","Google Shopping / Age Group","Google Shopping / MPN","Google Shopping / Condition","Google Shopping / Custom Product","Google Shopping / Custom Label 0","Google Shopping / Custom Label 1","Google Shopping / Custom Label 2","Google Shopping / Custom Label 3","Google Shopping / Custom Label 4","Complimentary Product Text (product.metafields.custom.complimentary_product_text)","Custom Additions (product.metafields.custom.custom_additions)","Details as Shown (product.metafields.custom.details_as_shown1)","Dimensions (product.metafields.custom.dimensions1)","Key Features (product.metafields.custom.key_features1)","Options (product.metafields.custom.options1)","Quickship or Regular (product.metafields.custom.quickship_or_regular)","Quickship or Regular Product (product.metafields.custom.quickship_or_regular_product)","Google: Custom Product (product.metafields.mm-google-shopping.custom_product)","Bed/Frame features (product.metafields.shopify.bed-frame-features)","Color (product.metafields.shopify.color-pattern)","Frame color (product.metafields.shopify.frame-color)","Furniture/Fixture features (product.metafields.shopify.furniture-fixture-features)","Furniture/Fixture material (product.metafields.shopify.furniture-fixture-material)","Seat structure (product.metafields.shopify.seat-structure)","Tabletop shape (product.metafields.shopify.tabletop-shape)","Upholstery material (product.metafields.shopify.upholstery-material)","Complementary products (product.metafields.shopify--discovery--product_recommendation.complementary_products)","Related products (product.metafields.shopify--discovery--product_recommendation.related_products)","Related products settings (product.metafields.shopify--discovery--product_recommendation.related_products_display","Variant Image","Variant Weight Unit","Variant Tax Code","Cost per item","Included / United States","Price / United States","Compare At Price / United States","Status"])
+
     worksheet.append(headers)
 
     for i, item in enumerate(result):
@@ -1045,24 +1047,17 @@ def exportAll(request):
         i_dict['level'] = item.get("category level", "")
         i_dict['category_id'] = item.get("category_id", "")
         getCategoryLevelOrder(i_dict)
-
         row = [
             i + 1,
-            item.get("mpn", ""),
-            item.get("Variant SKU", ""),
             item.get("product_name", ""),
-            item.get("model", ""),
-            item.get("upc_ean", ""),
-            i_dict.get("category_name", ""),
-            item.get("brand", ""),
-            item.get("short_description", ""),
+            item.get("product_name", ""),
             item.get("long_description", ""),
-            item.get("retail_price", ""),
-            item.get("Un Finished Price", ""),
-            item.get("Finished Price", "")
+            item.get("brand", ""),
+            item.get("category_last_name", ""),
+            i_dict.get("category_name", ""),
+            item.get("Tags", ""),
+            item.get(""), #Published
         ]
-
-        # Extract variant options and add them to the row
         variant_options = item.get("varient_option_list", [])
         for j in range(max_variants):
             if j < len(variant_options):
@@ -1071,13 +1066,16 @@ def exportAll(request):
             else:
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
-        
-        # img_src = item.get("Image Src", [])
-        # for j in range(max_image):
-        #     row.append(img_src[j] if j < len(img_src) else '')
-        
-        # print(row)
-        # row.append(item.get("stockv", ""))
+        row.extend(["","","","","",item.get("retail_price",""),"","","",""])
+        img_src = item.get("Image Src", [])
+        img_src_str = ""
+        print(img_src)
+        for j in img_src:
+            img_src_str = j +"," + img_src_str
+        row.append(img_src_str)
+        row.extend(["","","","","","","","","","","","","","","","","","","","",item.get("Key Features", ""),"","","","","","","","","","","","","","","","","",""])
+        row.append(item.get("Cost per item",""))
+        row.extend(["","","",""])
         worksheet.append(row)
     buffer = BytesIO()
     workbook.save(buffer)
@@ -2341,7 +2339,6 @@ def createBrandCategoryWisePrice(json_req):
     return data
 
 from bson.dbref import DBRef
-
 @csrf_exempt
 def updateRetailPrice(request):
     json_req = JSONParser().parse(request)
@@ -2444,3 +2441,455 @@ def createUser(request):
     data['is_created'] = True
     return data
 
+
+@csrf_exempt
+def obtainVarientOptionForRetailPrice(request):
+    data = dict()
+    data['varient_option_list'] = []
+    varient_option_list = DatabaseModel.list_documents(varient_option.objects,{})
+    for i in varient_option_list:
+        data['varient_option_list'].append({'id':str(i.option_name_id.id),"name":i.option_name_id.name})
+    return data
+
+
+@csrf_exempt
+def obtainVarientOptionValueForRetailPrice(request):
+    data = dict()
+    option_name_id = request.GET.get('id')
+    data['varient_option_value_list'] = []
+    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':option_name_id})
+    if varient_option_obj:
+        for i in varient_option_obj.option_value_id_list:
+            data['varient_option_value_list'].append({'id':str(i.id),"name":i.name})
+    return data
+
+
+# @csrf_exempt
+# def updateRetailPriceForVarientOptionValue(request):
+#     json_req = JSONParser().parse(request)
+#     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
+#     percentage_price = json_req['percentage_price']
+#     products_list = DatabaseModel.list_documents(products.objects,{'brand':json_req['brand_id']})
+#     for i in products_list:
+#         for j in i.options:
+#             if json_req['option_name_id'] ==  str(j.varient_option_id.option_name_id.id)  and j.varient_option_id.option_value_id.id in json_req['option_value_id_list']:
+#                 if json_req['price_option'] == 'finished_price':
+#                     j.retail_price = ((j.finished_price/100)*percentage_price) + j.finished_price
+#                 else:
+#                     j.retail_price = ((j.un_finished_price/100)*percentage_price) + j.un_finished_price
+#     data = dict()
+#     data['is_updated'] = True
+#     return data
+@csrf_exempt
+def obtainProductBasedOnVarientOption(request):
+    json_req = JSONParser().parse(request)
+    price_option = json_req['price_option'] 
+    option_value_id_list = [ObjectId(i) for i in json_req['option_value_id']]
+    pipeline = [
+    {
+            "$match":{'brand_id':ObjectId(json_req['brand_id'])}
+        },
+        {
+            '$lookup': {
+                "from": 'product_varient',
+                "localField": 'options',
+                "foreignField": "_id",
+                "as": "product_varient_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+        {
+            '$lookup': {
+                "from": 'product_varient_option',
+                "localField": 'product_varient_ins.varient_option_id',
+                "foreignField": "_id",
+                "as": "product_varient_option_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_option_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+        {
+            "$match":{'product_varient_option_ins.option_name_id':ObjectId(json_req['option_name_id']),'product_varient_option_ins.option_value_id':{'$in':(option_value_id_list)}}
+        },
+        {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'product_varient_option_ins.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'product_varient_option_ins.option_value_id',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":"$product_varient_ins._id",
+            "product_id": { "$first": "$_id" },
+            "product_varient_id": { "$first": "$product_varient_ins._id" },
+            "product_name": { "$first": "$product_name" },
+            "sku_number": { "$first": "$product_varient_ins.sku_number" },
+            "finished_price": { "$first": "$product_varient_ins.finished_price" },
+            "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
+            "retail_price": { "$first": "$product_varient_ins.retail_price" },
+            "image_url": { "$first": "$image" },
+            'varient_option_list': {
+                "$push": {
+                    'type_name': "$type_name.name",
+                    'type_value': "$type_value.name",
+                }
+            }
+        }
+    }, {
+            '$project': {
+            "_id": 0,
+            'product_id':1,
+            'product_varient_id':1,
+            'product_name':1,
+            "sku_number":1,
+            'retail_price':1,
+            "finished_price":1,
+            "un_finished_price":1,
+            "quantity": 1,
+            "image_url": 1,
+            'varient_option_list':1
+            }
+        }
+    ]
+    result = list(products.objects.aggregate(*pipeline))
+    for i in result:
+        i['brand_id'] = str(json_req['brand_id'])
+        i[price_option] = float(i[price_option])
+        json_req['price'] = float(json_req['price'])
+        i['price_adding_sympol'] = json_req['price_symbol']
+        if json_req['price_symbol'] == '%':
+            i[price_option] = i[price_option] + (i[price_option]/100*json_req['price'])
+        else:
+            i[price_option] = float(i[price_option]) + (json_req['price'])
+        product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'product_id':i['product_id']})
+        i['product_id'] = str(i['product_id'])
+        i['product_varient_id'] = str(i['product_varient_id'])
+        category_id = ""
+        if product_category_config_obj:
+            category_id = product_category_config_obj.category_id
+        i['category_id'] = product_category_config_obj.category_id
+        brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':category_id,'brand_id':ObjectId(json_req['brand_id']),'price_option':price_option,'is_active':True})
+        if brand_category_price_obj:
+            i['retail_price'] =  str(i[price_option] * float(brand_category_price_obj.price))
+        else:
+            i['retail_price'] = str(i[price_option])
+        i[price_option] = str(i[price_option])
+        i['price_option'] = price_option
+    return result
+
+@csrf_exempt
+def saveChangesForVarientOption(request):
+    json_req = JSONParser().parse(request)
+    result_list = json_req['result_list'] 
+    data = dict()
+    data['result_list'] = json_req['result_list']
+    for i in result_list:
+        brand_id = i['brand_id']
+        product_varient_obj = DatabaseModel.get_document(product_varient.objects,{'id':i['product_varient_id']})
+        for j in i['varient_option_list']:
+            type_name_id = DatabaseModel.get_document(type_name.objects,{'name':j['type_name']}).id
+            type_value_id =DatabaseModel.get_document(type_value.objects,{'name':j['type_value']}).id
+            if i['price_option'] == 'finished_price':
+                revert_varient_retail_price_obj = DatabaseModel.get_document(revert_varient_retail_price.objects,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['finished_price'],"old_price":product_varient_obj.finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
+            else:
+                revert_varient_retail_price_obj = DatabaseModel.get_document(revert_varient_retail_price.objects,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['un_finished_price'],"old_price":product_varient_obj.un_finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
+                
+            if revert_varient_retail_price_obj == None:
+                if i['price_option'] == 'finished_price':
+                    DatabaseModel.save_documents(revert_varient_retail_price,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['finished_price'],"old_price":product_varient_obj.finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option'],'price_adding_sympol':i['price_adding_sympol']})
+                else:
+                    DatabaseModel.save_documents(revert_varient_retail_price,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['un_finished_price'],"old_price":product_varient_obj.un_finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
+            else:
+                revert_varient_retail_price_obj.old_retail_price = product_varient_obj.retail_price
+                revert_varient_retail_price_obj.current_retail_price = str(i['retail_price'])
+        product_varient_obj.finished_price = i['finished_price']
+        product_varient_obj.un_finished_price = i['un_finished_price']
+        product_varient_obj.retail_price = str(i['retail_price'])
+        product_varient_obj.save()
+    return data
+
+@csrf_exempt
+def obtainRevertPreviousAndCurrentPriceForCategory(request):
+    json_req = JSONParser().parse(request)
+    data = dict()
+    brand_category_price_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price_option':json_req['price_option']})
+    data['old_price'] = 0
+    data['current_price'] = 0
+    last_two_values = []
+    brand_category_price_list = list(brand_category_price_list) 
+    if len(brand_category_price_list) >= 2:
+        last_two_values = brand_category_price_list[-2:]
+        data['old_price'] = last_two_values[0].price
+        data['current_price'] = last_two_values[1].price
+    elif len(brand_category_price_list) == 1:
+        data['current_price'] = brand_category_price_list[0].price
+        data['old_price'] = brand_category_price_list[0].price
+    return data
+
+
+@csrf_exempt
+def obtainRevertPreviousAndCurrentPriceForVarientOption(request):
+    json_req = JSONParser().parse(request)
+    brand_id = json_req.get('brand_id')
+    type_name_id = json_req.get('option_name_id')
+    type_value_id = json_req.get('option_value_id')
+    type_value_id = [ObjectId(i) for i in type_value_id]
+    data = dict()
+    revert_varient_retail_price_obj = DatabaseModel.list_documents(revert_varient_retail_price.objects,{'brand_id':brand_id,'type_name_id':type_name_id,'type_value_id__in':type_value_id,'price_option':json_req['price_option']})
+    revert_varient_retail_price_obj = list(revert_varient_retail_price_obj)
+    if revert_varient_retail_price_obj:
+        revert_varient_retail_price_obj = revert_varient_retail_price_obj[-1]
+    print(revert_varient_retail_price_obj)
+    data['current_price'] = 0
+    data['old_price'] = 0
+    if revert_varient_retail_price_obj:
+        data['old_price'] = revert_varient_retail_price_obj.old_price
+        data['current_price'] = revert_varient_retail_price_obj.current_price
+    return data
+
+@csrf_exempt
+def updateRevertPriceForCategory(request):
+    json_req = JSONParser().parse(request)
+    brand_category_price_list = DatabaseModel.list_documents(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price_option':json_req['price_option']})
+    old_price = 0
+    current_price = 0
+    last_two_values = []
+    brand_category_price_list = list(brand_category_price_list) 
+    if len(brand_category_price_list) >= 2:
+        last_two_values = brand_category_price_list[-2:]
+        old_price = last_two_values[0].price
+        current_price = last_two_values[1].price
+    elif len(brand_category_price_list) == 1:
+        current_price = brand_category_price_list[0].price
+        old_price = brand_category_price_list[0].price
+    brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':old_price,'price_option':json_req['price_option']})
+    if brand_category_price_obj_1:
+        brand_category_price_obj_1.is_active = True
+        brand_category_price_obj_1.save()
+    brand_category_price_obj_2 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':current_price,'price_option':json_req['price_option']})
+    if brand_category_price_obj_2:
+        brand_category_price_obj_2.delete()
+        
+    pipeline = [
+    {
+            "$match":{'brand_id':ObjectId(json_req['brand_id'])}
+        },
+        {
+            '$lookup': {
+                "from": 'product_category_config',
+                "localField": '_id',
+                "foreignField": "product_id",
+                "as": "product_category_config_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_category_config_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        },{
+            "$match":{'product_category_config_ins.category_id':str(json_req['category_id'])}
+        },
+        
+        {
+            '$lookup': {
+                "from": 'product_varient',
+                "localField": 'options',
+                "foreignField": "_id",
+                "as": "product_varient_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":"$product_varient_ins._id",
+            "product_varient_id": { "$first": "$product_varient_ins._id" },
+            "finished_price": { "$first": "$product_varient_ins.finished_price" },
+            "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
+            "retail_price": { "$first": "$product_varient_ins.retail_price" },
+        }
+    }
+    ]
+    result = list(products.objects.aggregate(*pipeline))
+    for i in result:
+        if json_req['price_option'] == 'finished_price':
+            retail_price = str(float(i['finished_price']) * float(brand_category_price_obj_1['price']))
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'retail_price':retail_price})
+    data = dict()
+    data['is_updated'] = True
+    return data
+
+@csrf_exempt
+def updateRevertPriceForVarientOption(request):
+    json_req = JSONParser().parse(request)
+    revert_varient_retail_price_obj = DatabaseModel.list_documents(revert_varient_retail_price.objects,{'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':json_req['option_value_id'],'price_option':json_req['price_option']})
+    revert_varient_retail_price_obj = list(revert_varient_retail_price_obj)
+    if revert_varient_retail_price_obj:
+        revert_varient_retail_price_obj = revert_varient_retail_price_obj[-1]
+    else:
+        data = dict()
+        data['is_updated'] = False
+        return data
+    price_option = json_req['price_option']
+    pipeline = [
+    {
+            "$match":{'brand_id':ObjectId(json_req['brand_id'])}
+        },
+        {
+            '$lookup': {
+                "from": 'product_varient',
+                "localField": 'options',
+                "foreignField": "_id",
+                "as": "product_varient_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+        {
+            '$lookup': {
+                "from": 'product_varient_option',
+                "localField": 'product_varient_ins.varient_option_id',
+                "foreignField": "_id",
+                "as": "product_varient_option_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_option_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+        {
+            "$match":{'product_varient_option_ins.option_name_id':ObjectId(json_req['option_name_id']),'product_varient_option_ins.option_value_id':{'$in':json_req['option_value_id']}}
+        },
+        {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'product_varient_option_ins.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'product_varient_option_ins.option_value_id',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":"$product_varient_ins._id",
+            "product_id": { "$first": "$_id" },
+            "product_varient_id": { "$first": "$product_varient_ins._id" },
+            "product_name": { "$first": "$product_name" },
+            "sku_number": { "$first": "$product_varient_ins.sku_number" },
+            "finished_price": { "$first": "$product_varient_ins.finished_price" },
+            "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
+            "retail_price": { "$first": "$product_varient_ins.retail_price" },
+            "image_url": { "$first": "$image" },
+            'varient_option_list': {
+                "$push": {
+                    'type_name': "$type_name.name",
+                    'type_value': "$type_value.name",
+                }
+            }
+        }
+    }, {
+            '$project': {
+            "_id": 0,
+            'product_id':1,
+            'product_varient_id':1,
+            'product_name':1,
+            "sku_number":1,
+            'retail_price':1,
+            "finished_price":1,
+            "un_finished_price":1,
+            "quantity": 1,
+            "image_url": 1,
+            'varient_option_list':1
+            }
+        }
+    ]
+    result = list(products.objects.aggregate(*pipeline))
+    for i in result:
+        i['brand_id'] = str(json_req['brand_id'])
+        i[price_option] = float(i[price_option])
+        json_req['price'] = float(revert_varient_retail_price_obj.old_price)
+        if revert_varient_retail_price_obj.price_adding_sympol == '%':
+            i[price_option] = i[price_option] + (i[price_option]/100*json_req['price'])
+        else:
+            i[price_option] = float(i[price_option]) + (json_req['price'])
+        product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'product_id':i['product_id']})
+        i['product_id'] = str(i['product_id'])
+        i['product_varient_id'] = str(i['product_varient_id'])
+        category_id = ""
+        if product_category_config_obj:
+            category_id = product_category_config_obj.category_id
+        i['category_id'] = product_category_config_obj.category_id
+        brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':category_id,'brand_id':ObjectId(json_req['brand_id']),'price_option':price_option,'is_active':True})
+        if brand_category_price_obj:
+            i['retail_price'] =  str(i[price_option] * float(brand_category_price_obj.price))
+        else:
+            i['retail_price'] = str(i[price_option])
+        i[price_option] = str(i[price_option])
+        i['price_option'] = str(i[price_option])
+        if price_option =='finished_price':
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'finished_price':i[price_option],'retail_price':i['retail_price']})
+        else:
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'un_finished_price':i[price_option],'retail_price':i['retail_price']})
+    revert_varient_retail_price_obj.delete()
+    data = dict()
+    data['is_updated'] = True
+    return data
