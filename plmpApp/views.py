@@ -2665,8 +2665,8 @@ def obtainRevertPreviousAndCurrentPriceForVarientOption(request):
     revert_varient_retail_price_obj = list(revert_varient_retail_price_obj) 
     if len(revert_varient_retail_price_obj) >= 2:
         last_two_values = revert_varient_retail_price_obj[-2:]
-        data['old_price'] = last_two_values[0].price
-        data['current_price'] = last_two_values[1].price
+        data['old_price'] = last_two_values[0].current_price
+        data['current_price'] = last_two_values[1].current_price
     elif len(revert_varient_retail_price_obj) == 1:
         data['current_price'] = revert_varient_retail_price_obj[0].current_price
         data['old_price'] = "0"
