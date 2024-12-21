@@ -2586,6 +2586,7 @@ def obtainProductBasedOnVarientOption(request):
         i['brand_id'] = str(json_req['brand_id'])
         i[price_option] = float(i[price_option])
         json_req['price'] = float(json_req['price'])
+        i['price'] = str(json_req['price'])
         i['price_adding_sympol'] = json_req['price_symbol']
         if json_req['price_symbol'] == '%':
             i[price_option] = i[price_option] + (i[price_option]/100*json_req['price'])
@@ -2605,6 +2606,8 @@ def obtainProductBasedOnVarientOption(request):
             i['retail_price'] = str(i[price_option])
         i[price_option] = str(i[price_option])
         i['price_option'] = price_option
+        i['option_value_id'] =json_req['option_value_id']
+        i['option_name_id'] =json_req['option_name_id']
     return result
 
 @csrf_exempt
@@ -2613,25 +2616,13 @@ def saveChangesForVarientOption(request):
     result_list = json_req['result_list'] 
     data = dict()
     data['result_list'] = json_req['result_list']
+    option_value_id_list = [ObjectId(i) for i in result_list[0]['option_value_id']]
+    
+    # revert_varient_retail_price_obj = DatabaseModel.get_document(revert_varient_retail_price.objects,{"brand_id" :ObjectId(brand_id),"type_name_id" :result_list[0]['option_name_id'],"type_value_id__in" :option_value_id_list,"current_price" :i['price'],'price_option':i['price_option']})   
+    i = result_list[0]
+    DatabaseModel.save_documents(revert_varient_retail_price,{"brand_id" :ObjectId(i['brand_id']),"type_name_id": i['option_name_id'],"type_value_id" :option_value_id_list,"current_price" :i['price'],'price_option':i['price_option'],'price_adding_sympol':i['price_adding_sympol']})
     for i in result_list:
-        brand_id = i['brand_id']
         product_varient_obj = DatabaseModel.get_document(product_varient.objects,{'id':i['product_varient_id']})
-        for j in i['varient_option_list']:
-            type_name_id = DatabaseModel.get_document(type_name.objects,{'name':j['type_name']}).id
-            type_value_id =DatabaseModel.get_document(type_value.objects,{'name':j['type_value']}).id
-            if i['price_option'] == 'finished_price':
-                revert_varient_retail_price_obj = DatabaseModel.get_document(revert_varient_retail_price.objects,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['finished_price'],"old_price":product_varient_obj.finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
-            else:
-                revert_varient_retail_price_obj = DatabaseModel.get_document(revert_varient_retail_price.objects,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['un_finished_price'],"old_price":product_varient_obj.un_finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
-                
-            if revert_varient_retail_price_obj == None:
-                if i['price_option'] == 'finished_price':
-                    DatabaseModel.save_documents(revert_varient_retail_price,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['finished_price'],"old_price":product_varient_obj.finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option'],'price_adding_sympol':i['price_adding_sympol']})
-                else:
-                    DatabaseModel.save_documents(revert_varient_retail_price,{"brand_id" :ObjectId(brand_id),"type_name_id" :type_name_id,"type_value_id" :type_value_id,"current_price" :i['un_finished_price'],"old_price":product_varient_obj.un_finished_price,"old_retail_price":product_varient_obj.retail_price,"current_retail_price":str(i['retail_price']),'price_option':i['price_option']})
-            else:
-                revert_varient_retail_price_obj.old_retail_price = product_varient_obj.retail_price
-                revert_varient_retail_price_obj.current_retail_price = str(i['retail_price'])
         product_varient_obj.finished_price = i['finished_price']
         product_varient_obj.un_finished_price = i['un_finished_price']
         product_varient_obj.retail_price = str(i['retail_price'])
@@ -2653,7 +2644,7 @@ def obtainRevertPreviousAndCurrentPriceForCategory(request):
         data['current_price'] = last_two_values[1].price
     elif len(brand_category_price_list) == 1:
         data['current_price'] = brand_category_price_list[0].price
-        data['old_price'] = brand_category_price_list[0].price
+        data['old_price'] = "0"
     return data
 
 
@@ -2667,14 +2658,14 @@ def obtainRevertPreviousAndCurrentPriceForVarientOption(request):
     data = dict()
     revert_varient_retail_price_obj = DatabaseModel.list_documents(revert_varient_retail_price.objects,{'brand_id':brand_id,'type_name_id':type_name_id,'type_value_id__in':type_value_id,'price_option':json_req['price_option']})
     revert_varient_retail_price_obj = list(revert_varient_retail_price_obj)
-    if revert_varient_retail_price_obj:
-        revert_varient_retail_price_obj = revert_varient_retail_price_obj[-1]
-    print(revert_varient_retail_price_obj)
-    data['current_price'] = 0
-    data['old_price'] = 0
-    if revert_varient_retail_price_obj:
-        data['old_price'] = revert_varient_retail_price_obj.old_price
-        data['current_price'] = revert_varient_retail_price_obj.current_price
+    revert_varient_retail_price_obj = list(revert_varient_retail_price_obj) 
+    if len(revert_varient_retail_price_obj) >= 2:
+        last_two_values = revert_varient_retail_price_obj[-2:]
+        data['old_price'] = last_two_values[0].price
+        data['current_price'] = last_two_values[1].price
+    elif len(revert_varient_retail_price_obj) == 1:
+        data['current_price'] = revert_varient_retail_price_obj[0].current_price
+        data['old_price'] = "0"
     return data
 
 @csrf_exempt
@@ -2685,21 +2676,25 @@ def updateRevertPriceForCategory(request):
     current_price = 0
     last_two_values = []
     brand_category_price_list = list(brand_category_price_list) 
+    brand_category_price_obj_price = "1"
     if len(brand_category_price_list) >= 2:
         last_two_values = brand_category_price_list[-2:]
         old_price = last_two_values[0].price
         current_price = last_two_values[1].price
+        brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':old_price,'price_option':json_req['price_option']})
+        if brand_category_price_obj_1:
+            brand_category_price_obj_1.is_active = True
+            brand_category_price_obj_1.save()
+            brand_category_price_obj_price = brand_category_price_obj_1.price
+            
+        brand_category_price_obj_2 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':current_price,'price_option':json_req['price_option']})
+        if brand_category_price_obj_2:
+            brand_category_price_obj_2.delete()
     elif len(brand_category_price_list) == 1:
         current_price = brand_category_price_list[0].price
         old_price = brand_category_price_list[0].price
-    brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':old_price,'price_option':json_req['price_option']})
-    if brand_category_price_obj_1:
-        brand_category_price_obj_1.is_active = True
-        brand_category_price_obj_1.save()
-    brand_category_price_obj_2 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':current_price,'price_option':json_req['price_option']})
-    if brand_category_price_obj_2:
-        brand_category_price_obj_2.delete()
-        
+        brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':json_req['category_id'],'brand_id':ObjectId(json_req['brand_id']),'price':current_price,'price_option':json_req['price_option']})
+        brand_category_price_obj_1.delete()
     pipeline = [
     {
             "$match":{'brand_id':ObjectId(json_req['brand_id'])}
@@ -2718,7 +2713,7 @@ def updateRevertPriceForCategory(request):
                 'preserveNullAndEmptyArrays': True
             }
         },{
-            "$match":{'product_category_config_ins.category_id':str(json_req['category_id'])}
+            "$match":{'product_category_config_ins.category_id':{'$in':(json_req['category_id'])}}
         },
         
         {
@@ -2746,9 +2741,15 @@ def updateRevertPriceForCategory(request):
     }
     ]
     result = list(products.objects.aggregate(*pipeline))
+    print(result)
     for i in result:
         if json_req['price_option'] == 'finished_price':
-            retail_price = str(float(i['finished_price']) * float(brand_category_price_obj_1['price']))
+            retail_price = str(float(i['finished_price']) * float(brand_category_price_obj_price))
+            print("")
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'retail_price':retail_price})
+        else:
+            retail_price = str(float(i['un_finished_price']) * float(brand_category_price_obj_price))
+            print("")
             DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'retail_price':retail_price})
     data = dict()
     data['is_updated'] = True
@@ -2757,14 +2758,35 @@ def updateRevertPriceForCategory(request):
 @csrf_exempt
 def updateRevertPriceForVarientOption(request):
     json_req = JSONParser().parse(request)
-    revert_varient_retail_price_obj = DatabaseModel.list_documents(revert_varient_retail_price.objects,{'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':json_req['option_value_id'],'price_option':json_req['price_option']})
+    type_value_id = json_req.get('option_value_id')
+    type_value_id = [ObjectId(i) for i in type_value_id]
+    revert_varient_retail_price_obj = DatabaseModel.list_documents(revert_varient_retail_price.objects,{'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':type_value_id,'price_option':json_req['price_option']})
     revert_varient_retail_price_obj = list(revert_varient_retail_price_obj)
-    if revert_varient_retail_price_obj:
-        revert_varient_retail_price_obj = revert_varient_retail_price_obj[-1]
-    else:
-        data = dict()
-        data['is_updated'] = False
-        return data
+    revert_varient_retail_price_obj = list(revert_varient_retail_price_obj) 
+    brand_category_price_obj_price = "1"
+    price_symbol = ""
+    if len(revert_varient_retail_price_obj) >= 2:
+        last_two_values = revert_varient_retail_price_obj[-2:]
+        old_price = last_two_values[0].current_price
+        current_price = last_two_values[1].current_price
+        price_symbol = revert_varient_retail_price_obj[0].price_adding_sympol
+        brand_category_price_obj_1 = DatabaseModel.get_document(revert_varient_retail_price.objects,
+        {'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':type_value_id,'price_option':json_req['price_option'],'current_price':old_price})
+        if brand_category_price_obj_1:
+            brand_category_price_obj_price = brand_category_price_obj_1.current_price
+        brand_category_price_obj_2 = DatabaseModel.get_document(revert_varient_retail_price.objects,
+        {'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':type_value_id,'price_option':json_req['price_option'],'current_price':current_price})
+        if brand_category_price_obj_2:
+            brand_category_price_obj_2.delete()
+    elif len(revert_varient_retail_price_obj) == 1:
+        current_price = revert_varient_retail_price_obj[0].current_price
+        price_symbol = revert_varient_retail_price_obj[0].price_adding_sympol
+        old_price = "0"
+        brand_category_price_obj_1 = DatabaseModel.get_document(revert_varient_retail_price.objects,
+        {'brand_id':json_req['brand_id'],'type_name_id':json_req['option_name_id'],'type_value_id__in':type_value_id,'price_option':json_req['price_option'],'current_price':current_price})
+        brand_category_price_obj_price = brand_category_price_obj_1.current_price
+        
+        brand_category_price_obj_1.delete()
     price_option = json_req['price_option']
     pipeline = [
     {
@@ -2776,6 +2798,19 @@ def updateRevertPriceForVarientOption(request):
                 "localField": 'options',
                 "foreignField": "_id",
                 "as": "product_varient_ins"
+            }
+        }, {
+            '$lookup': {
+                "from": 'product_category_config',
+                "localField": '_id',
+                "foreignField": "product_id",
+                "as": "product_category_config_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_category_config_ins',
+                'preserveNullAndEmptyArrays': True
             }
         },
         {
@@ -2799,7 +2834,7 @@ def updateRevertPriceForVarientOption(request):
             }
         }, 
         {
-            "$match":{'product_varient_option_ins.option_name_id':ObjectId(json_req['option_name_id']),'product_varient_option_ins.option_value_id':{'$in':json_req['option_value_id']}}
+            "$match":{'product_varient_option_ins.option_name_id':ObjectId(json_req['option_name_id']),'product_varient_option_ins.option_value_id':{'$in':type_value_id}}
         },
         {
         '$lookup': {
@@ -2832,6 +2867,7 @@ def updateRevertPriceForVarientOption(request):
         '$group': {
             "_id":"$product_varient_ins._id",
             "product_id": { "$first": "$_id" },
+            "category_id": { "$first": "$product_category_config_ins.category_id" },
             "product_varient_id": { "$first": "$product_varient_ins._id" },
             "product_name": { "$first": "$product_name" },
             "sku_number": { "$first": "$product_varient_ins.sku_number" },
@@ -2850,6 +2886,7 @@ def updateRevertPriceForVarientOption(request):
             '$project': {
             "_id": 0,
             'product_id':1,
+            'category_id':1,
             'product_varient_id':1,
             'product_name':1,
             "sku_number":1,
@@ -2863,33 +2900,21 @@ def updateRevertPriceForVarientOption(request):
         }
     ]
     result = list(products.objects.aggregate(*pipeline))
+    
     for i in result:
-        i['brand_id'] = str(json_req['brand_id'])
         i[price_option] = float(i[price_option])
-        json_req['price'] = float(revert_varient_retail_price_obj.old_price)
-        if revert_varient_retail_price_obj.price_adding_sympol == '%':
-            i[price_option] = i[price_option] + (i[price_option]/100*json_req['price'])
+        if price_symbol == '%':
+            print(i[price_option],brand_category_price_obj_price)
+            i[price_option] = round(i[price_option]/(1+(float(brand_category_price_obj_price)/100.00)))
         else:
-            i[price_option] = float(i[price_option]) + (json_req['price'])
-        product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{'product_id':i['product_id']})
-        i['product_id'] = str(i['product_id'])
-        i['product_varient_id'] = str(i['product_varient_id'])
-        category_id = ""
-        if product_category_config_obj:
-            category_id = product_category_config_obj.category_id
-        i['category_id'] = product_category_config_obj.category_id
-        brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':category_id,'brand_id':ObjectId(json_req['brand_id']),'price_option':price_option,'is_active':True})
-        if brand_category_price_obj:
-            i['retail_price'] =  str(i[price_option] * float(brand_category_price_obj.price))
+            i[price_option] = float(i[price_option]) - float(brand_category_price_obj_price)
+        brand_category_price_obj_1 = DatabaseModel.get_document(brand_category_price.objects,{'category_id__in':[i['category_id']],'brand_id':ObjectId(json_req['brand_id']),'is_active':True,'price_option':price_option})
+        if json_req['price_option'] == 'finished_price':
+            retail_price = str(float(i[price_option]) * float(brand_category_price_obj_1.price))
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{"finished_price":str(i[price_option]),'retail_price':retail_price})
         else:
-            i['retail_price'] = str(i[price_option])
-        i[price_option] = str(i[price_option])
-        i['price_option'] = str(i[price_option])
-        if price_option =='finished_price':
-            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'finished_price':i[price_option],'retail_price':i['retail_price']})
-        else:
-            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'un_finished_price':i[price_option],'retail_price':i['retail_price']})
-    revert_varient_retail_price_obj.delete()
+            retail_price = str(float(i[price_option]) * float(brand_category_price_obj_1.price))
+            DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{"un_finished_price":str(i[price_option]),'retail_price':retail_price})
     data = dict()
     data['is_updated'] = True
     return data

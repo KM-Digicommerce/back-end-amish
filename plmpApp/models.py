@@ -419,9 +419,6 @@ class revert_varient_retail_price(Document):
     type_name_id = fields.ReferenceField(type_name)
     type_value_id = fields.ReferenceField(type_value)
     current_price = fields.StringField()
-    old_price = fields.StringField()
-    current_retail_price = fields.StringField()
-    old_retail_price = fields.StringField()
     price_option = fields.StringField()
     price_adding_sympol = fields.StringField()
     
