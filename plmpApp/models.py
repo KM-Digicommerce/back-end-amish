@@ -12,6 +12,7 @@ class client(Document):
     logo = fields.StringField()
     location = fields.StringField()
 
+
 class user(Document):
     name = fields.StringField(required=True)
     email = fields.StringField(required=True)
@@ -405,7 +406,6 @@ class brand_category_price(Document):
     is_active = fields.BooleanField(default=False)
     price_option = fields.StringField()
     
-    
 class radial_price_log(Document):
     product_varient_id = fields.ReferenceField(product_varient)
     old_retail_price = fields.StringField()
@@ -414,4 +414,14 @@ class radial_price_log(Document):
     log_date = fields.DateTimeField(default=datetime.now)
     client_id = fields.ReferenceField(client)
 
+class revert_varient_retail_price(Document):
+    brand_id = fields.ReferenceField(brand)
+    type_name_id = fields.ReferenceField(type_name)
+    type_value_id = fields.ReferenceField(type_value)
+    current_price = fields.StringField()
+    old_price = fields.StringField()
+    current_retail_price = fields.StringField()
+    old_retail_price = fields.StringField()
+    price_option = fields.StringField()
+    price_adding_sympol = fields.StringField()
     
