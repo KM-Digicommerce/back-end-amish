@@ -1063,10 +1063,12 @@ def exportAll(request):
             if j < len(variant_options):
                 row.append(variant_options[j].get('name', ''))
                 row.append(variant_options[j].get('value', ''))
+                row.append(variant_options[j].get(''))
             else:
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
-        row.extend(["","","","","","",item.get("retail_price",""),"","","",""])
+                row.append('')  # Add empty values for missing variants
+        row.extend(["","","","","",item.get("retail_price",""),"","","",""])
         img_src = item.get("Image Src", [])
         img_src_str = ""
         print(img_src)
