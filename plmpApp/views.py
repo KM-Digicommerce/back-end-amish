@@ -522,13 +522,21 @@ def obtainAllProductList(request):
     client_id = get_current_client()
     print(client_id)
     category_id = request.GET.get("category_id")
+    brand_id = request.GET.get("brand_id")
     filter = request.GET.get("filter")
     if filter == "true" or filter == None:
         reverse_check = True
     else:
         reverse_check = False
     level_name = request.GET.get("level_name")
-    if category_id:
+    brand_obj = {}
+    if brand_id != None:
+        brand_obj = {"brand._id":ObjectId(brand_id)}
+    category_obj = {}
+    if category_id != None and level_name == None:
+        category_obj = {"category_id":category_id}
+    
+    elif category_id:
         all_ids = []
         if level_name == "level-1":
             category_obj = DatabaseModel.get_document(category.objects,{'id':category_id,"client_id":client_id})
@@ -618,6 +626,8 @@ def obtainAllProductList(request):
                 'path': '$brand',
                 'preserveNullAndEmptyArrays': True
             }
+        },{
+            "$match":brand_obj
         },
     {
         '$group': {
@@ -733,8 +743,8 @@ def obtainProductDetails(request):
             result['category_brand_price']['price'] = brand_category_price_obj.price
             result['category_brand_price']['price_option'] = brand_category_price_obj.price_option
         else:
-            result['category_brand_price']['price'] = 0
-            result['category_brand_price']['price_option'] = ""
+            result['category_brand_price']['price'] = 1
+            result['category_brand_price']['price_option'] = "finished_price"
         print(i)
         getCategoryLevelOrder(i)
         result['category_level'] = i['category_name']
@@ -1076,7 +1086,7 @@ def exportAll(request):
             img_src_str = j +"," + img_src_str
         row.append(img_src_str)
         row.extend(["","","","","","","","","","","","","","","","","","","","",item.get("Key Features", ""),"","","","","","","","","","","","","","","","","",""])
-        row.append(item.get("Cost per item",""))
+        row.append(item.get("Finished Price",""))
         row.extend(["","","",""])
         worksheet.append(row)
     buffer = BytesIO()
@@ -2007,6 +2017,8 @@ def saveXlData(request):
                     retail_price = str(float(Finished_Price) * float(cat_retail_price))
                 else:
                     retail_price = str(float(Un_Finished_Price) * float(cat_retail_price))
+            else:
+                retail_price = str(float(Finished_Price) * float(1))
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
         createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
         
@@ -2347,28 +2359,29 @@ def updateRetailPrice(request):
     user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     product_category_config_list = DatabaseModel.list_documents(product_category_config.objects,{'category_id__in':json_req['category_id_list']})
     createBrandCategoryWisePrice(json_req)
+    old_price = '0'
     for i in product_category_config_list:
         for j in i.product_id.options:
             print("......",i.product_id.id)
-            brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
-            if isinstance(j, DBRef):
-                # Dereference and access the data
-                old_price = '0'
-                j.retail_price = json_req['price']
-            else:
-                old_price = j.retail_price if 'retail_price' in j else '0'
-            if brand_category_price_obj:
-                if brand_category_price_obj.price_option == "finished_price":
-                    print(j.finished_price,json_req['price'])
-                    if j.finished_price == '' or j.finished_price =='None'or j.finished_price ==None:
-                        j.finished_price = '0' 
-                    j.retail_price = str(float(j.finished_price) * float(json_req['price']))
+            if str(i.product_id.brand_id) == json_req['brand_id']:
+                brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
+                if isinstance(j, DBRef):
+                    # Dereference and access the data
+                    old_price = '0'
+                    j.retail_price = json_req['price']
                 else:
-                    if j.un_finished_price == '' or j.un_finished_price =='None' or j.un_finished_price ==None:
-                        j.un_finished_price = '0'
-                    j.retail_price = str(float(j.un_finished_price) * float(json_req['price']))
-            if j.retail_price == None:
-                j.retail_price = "0"
+                    old_price = j.retail_price if 'retail_price' in j else '0'
+                if brand_category_price_obj:
+                    if brand_category_price_obj.price_option == "finished_price":
+                        if j.finished_price == '' or j.finished_price =='None'or j.finished_price ==None:
+                            j.finished_price = '0' 
+                        j.retail_price = str(float(j.finished_price) * float(json_req['price']))
+                    else:
+                        if j.un_finished_price == '' or j.un_finished_price =='None' or j.un_finished_price ==None:
+                            j.un_finished_price = '0'
+                        j.retail_price = str(float(j.un_finished_price) * float(json_req['price']))
+                if j.retail_price == None:
+                    j.retail_price = "0"
             j.save()
             client_id = get_current_client()
             
@@ -2430,8 +2443,8 @@ def obtainRetailBrandPrice(request):
         data['price'] = brand_category_price_obj.price
         data['price_option'] = brand_category_price_obj.price_option
     else:
-        data['price'] = 0
-        data['price_option'] = ""
+        data['price'] = 1
+        data['price_option'] = "finished_price"
     return data
 
 @csrf_exempt
