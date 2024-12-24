@@ -9,16 +9,18 @@ class DatabaseModel:
     @staticmethod
     def get_document(queryset, filter={}, field_list=[]):
         try:
-            # if isinstance(queryset, QuerySet):
-            #     queryset_name = queryset._document.__name__
-            #     cache_key = f"{queryset_name}:get:{str(filter)}:{str(field_list)}"
-            #     cached_data = DatabaseModel.redis_client.get(cache_key)
-            #     if cached_data:
-            #         return pickle.loads(cached_data)
+            if isinstance(queryset, QuerySet):
+                queryset_name = queryset._document.__name__
+                if queryset_name  in ['user','category','level_one_category','level_two_category','level_three_category','level_four_category','level_five_category','type_name','type_value','vendor','capability' ]:
+                    cache_key = f"{queryset_name}:get:{str(filter)}:{str(field_list)}"
+                    cached_data = DatabaseModel.redis_client.get(cache_key)
+                    if cached_data:
+                        return pickle.loads(cached_data)
             data = queryset.filter(**filter).only(*field_list).limit(1)
             if data:
                 data = data[0]
-                # DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
+                if queryset_name in []:
+                    DatabaseModel.redis_client.setex(cache_key, 3600, pickle.dumps(data))
                 return data
             else:
                 return None
