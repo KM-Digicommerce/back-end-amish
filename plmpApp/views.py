@@ -518,16 +518,14 @@ def obtainCategoryAndSections(request):
 
 @csrf_exempt
 def obtainAllProductList(request):
-    # json_req = JSONParser().parse(request)
     client_id = get_current_client()
-    print(client_id)
     category_id = request.GET.get("category_id")
     brand_id = request.GET.get("brand_id")
     filter = request.GET.get("filter")
     if filter == "true" or filter == None:
-        reverse_check = True
+        reverse_check = -1
     else:
-        reverse_check = False
+        reverse_check = 1
     level_name = request.GET.get("level_name")
     brand_obj = {}
     if brand_id != None:
@@ -631,47 +629,42 @@ def obtainAllProductList(request):
         },
     {
         '$group': {
-            "_id":None,
-            'product_list': {
-                "$push": {
-                    'product_name': "$products.product_name",
-                    'product_id': "$products._id",
-                    'model':"$products.model",
-                    'upc_ean':"$products.upc_ean",
-                    'breadcrumb':"$products.breadcrumb",
-                    'brand':"$brand.name",
-                    'product_name':"$products.product_name",
-                    'long_description':"$products.long_description",
-                    'short_description':"$products.short_description",
-                    'features':"$products.features",
-                    'attributes':"$products.attributes",
-                    'tags':"$products.tags",
-                    'msrp':"$products.msrp",
-                    'mpn':"$products.mpn",
-                    'base_price':"$products.base_price",
-                    'key_features':"$products.key_features",
-                    'image':"$products.image",
-                    'level':'$category_level',
-                    'category_id':'$category_id'
+            "_id":'$_id',
+            # 'product_list': {
+            #     "$push": {
+            'product_name':{'$first': "$products.product_name"},
+            'product_id':{'$first': "$products._id"},
+            'model':{'$first':"$products.model"},
+            'upc_ean':{'$first':"$products.upc_ean"},
+            'breadcrumb':{'$first':"$products.breadcrumb"},
+            'brand':{'$first':"$brand.name"},
+            'product_name':{'$first':"$products.product_name"},
+            'long_description':{'$first':"$products.long_description"},
+            'short_description':{'$first':"$products.short_description"},
+            'features':{'$first':"$products.features"},
+            'attributes':{'$first':"$products.attributes"},
+            'tags':{'$first':"$products.tags"},
+            'msrp':{'$first':"$products.msrp"},
+            'mpn':{'$first':"$products.mpn"},
+            'base_price':{'$first':"$products.base_price"},
+            'key_features':{'$first':"$products.key_features"},
+            'image':{'$first':"$products.image"},
+            'level':{'$first':'$category_level'},
+            'category_id':{'$first':'$category_id'}
                 }
-            }
-        }
-    }
+            },{'$sort': {'_id':reverse_check}}
+        # }
+    # }
     ]
     result = list(product_category_config.objects.aggregate(*pipeline))
     data = dict()
-    data['product_list'] = list()
-    data['product_count'] = 0
-    if len(result)>0:
-        result = result[0]
-        del result['_id']
-        result['product_list']
-        for j in result['product_list']:
-            j['product_id'] = str(j['product_id']) if 'product_id'in j else ""
-            getCategoryLevelOrder(j)
-        data['product_list'] = result['product_list']
-        data['product_count'] = len(result['product_list'])
-        data['product_list'] = sorted(data['product_list'], key=lambda x: ObjectId(x['product_id']),reverse=reverse_check)
+    for j in result:
+        del (j['_id'])
+        j['product_id'] = str(j['product_id']) if 'product_id'in j else ""
+        getCategoryLevelOrder(j)
+    data['product_list'] = result
+    data['product_count'] = len(result)
+    # data['product_list'] = sorted(data['product_list'], key=lambda x: ObjectId(x['product_id']),reverse=reverse_check)
     return data
 
 
@@ -1299,38 +1292,60 @@ def createValueForVarientName(request):
         DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id,'client_id':client_id},{'add_to_set__option_value_id_list':type_value_id})
         data['is_created'] = True
     return data
+def traverse_categories(category, result_list):
+    """
+    Recursively traverse categories and add their IDs and names to the result list.
+    """
+    if hasattr(category, 'level_five_category_list') and category.level_five_category_list:
+        for sub_category in category.level_five_category_list:
+            traverse_categories(sub_category, result_list)
+    elif hasattr(category, 'level_four_category_list') and category.level_four_category_list:
+        for sub_category in category.level_four_category_list:
+            traverse_categories(sub_category, result_list)
+    elif hasattr(category, 'level_three_category_list') and category.level_three_category_list:
+        for sub_category in category.level_three_category_list:
+            traverse_categories(sub_category, result_list)
+    elif hasattr(category, 'level_two_category_list') and category.level_two_category_list:
+        for sub_category in category.level_two_category_list:
+            traverse_categories(sub_category, result_list)
+    elif hasattr(category, 'level_one_category_list') and category.level_one_category_list:
+        for sub_category in category.level_one_category_list:
+            traverse_categories(sub_category, result_list)
+    else:
+        result_list.append({'id': category.id, 'name': category.name})
 
 
 def obtainDashboardCount(request):
     data = dict()
     client_id = get_current_client()
-    print("///////////////",client_id)
-    data['total_product'] = DatabaseModel.count_documents(products.objects,{'client_id':client_id})
-    data['total_brand'] = DatabaseModel.count_documents(brand.objects,{'client_id':client_id})
+    pipeline = [
+        {
+            '$match':{'client_id':ObjectId(client_id)}
+        },
+    {
+            '$group': {
+                "_id":'$_id',
+        }
+        }
+    ]
+    data['total_product'] =len(list(products.objects.aggregate(*pipeline)))
+    pipeline = [
+        {
+            '$match':{'client_id':ObjectId(client_id)}
+        },
+    {
+            '$group': {
+                "_id":'$_id',
+        }
+        }
+    ]
+    data['total_brand'] = len(list(brand.objects.aggregate(*pipeline)))
     last_all_ids = []
-    category_list = DatabaseModel.list_documents(category.objects,{'client_id':client_id})
+    category_list = DatabaseModel.list_documents(category.objects, {'client_id': client_id})
+    last_all_ids = []
+
     for category_obj in category_list:
-        if len(category_obj.level_one_category_list)>0:
-            for i in category_obj.level_one_category_list:
-                if len(i.level_two_category_list)>0:
-                    for j in i.level_two_category_list:
-                        if len(j.level_three_category_list)>0:
-                            for k in j.level_three_category_list:
-                                if len(k.level_four_category_list)>0:
-                                    for l in  k.level_four_category_list:
-                                        if len(l.level_five_category_list)>0:
-                                            for m in  l.level_five_category_list:
-                                                last_all_ids.append({'id':m.id,'name':m.name})
-                                        else:
-                                            last_all_ids.append({'id':l.id,'name':l.name})
-                                else:
-                                    last_all_ids.append({'id':k.id,'name':k.name})
-                        else:
-                            last_all_ids.append({'id':j.id,'name':j.name})
-                else:
-                    last_all_ids.append({'id':i.id,'name':i.name})
-        else:
-            last_all_ids.append({'id':category_obj.id,'name':category_obj.name})
+        traverse_categories(category_obj, last_all_ids)
     data['category_project_dict'] = dict()
     for i in last_all_ids:
         data['category_project_dict'][i['name']] = DatabaseModel.count_documents(product_category_config.objects,{'category_id':str(i['id'])})
@@ -1756,12 +1771,12 @@ def obtainProductVarientLog(request):
 @csrf_exempt
 def createBrand(request):
     json_req = JSONParser().parse(request)
-    name = json_req.get("name").title()
+    name = json_req.get("name")
     brand_obj = DatabaseModel.get_document(brand.objects,{'name':name})
     data = dict()
     if brand_obj:
         data['is_created'] = False
-        data['error'] = "Brand Already Present"
+        data['error'] = "Ventor Already Present"
         return data
     else:
         brand_obj = DatabaseModel.save_documents(brand,{'name':name})
@@ -1779,17 +1794,28 @@ def obtainBrand(request):
         },
     {
             '$group': {
-                "_id":None,
-                "brand_list":{'$push':{"id":"$_id",'name':'$name','brand_number':'$brand_number','logo':'$logo'}}
+                "_id":'$_id',
+                # "brand_list":{'$push':{"id":"$_id",'name':'$name','brand_number':'$brand_number','logo':'$logo'}}
+                'brand_number':{'$first':'$brand_number'},
+                'name':{'$first':'$name'},
+                'logo':{'$first':'$logo'},
         }
+        },{
+            '$project':{
+                '_id':1,
+                'brand_number':1,
+                'name':1,
+                'logo':1,
+            }
         }
     ]
     brand_list = list(brand.objects.aggregate(*pipeline))
-    data['brand_list'] = list() 
-    if brand_list:
-        for brand_ins in brand_list[0]['brand_list']:
-            brand_ins['id'] = str(brand_ins['id'])
-        data['brand_list'] = brand_list[0]['brand_list']
+    print(brand_list)
+    for i in brand_list:
+        i['id'] = str (i['_id'])
+        del i['_id']
+    data['brand_list'] = brand_list
+    data['brand_count'] = len(data['brand_list'])
     return data
 
 
