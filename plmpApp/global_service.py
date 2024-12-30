@@ -55,7 +55,6 @@ class DatabaseModel:
                 if isinstance(queryset, QuerySet):
                     queryset_name = queryset._document.__name__
                     pattern = f"{queryset_name}:*"
-                    print(pattern)
                     keys = DatabaseModel.redis_client.keys(pattern)
                     if keys:
                         DatabaseModel.redis_client.delete(*keys)
