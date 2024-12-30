@@ -22,7 +22,7 @@ def skip_for_paths():
     """
     Decorator for skipping middleware based on path
     """
-    def decorator(f):
+    def decorator(f):       
         def check_if_health(self, request):
             if check_ignore_authentication_for_url(request): 
                 return self.get_response(request)  

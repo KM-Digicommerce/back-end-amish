@@ -738,7 +738,6 @@ def obtainProductDetails(request):
         else:
             result['category_brand_price']['price'] = 1
             result['category_brand_price']['price_option'] = "finished_price"
-        print(i)
         getCategoryLevelOrder(i)
         result['category_level'] = i['category_name']
     return  result
@@ -1016,7 +1015,6 @@ def exportAll(request):
     
     ]
     result = list(products.objects.aggregate(*pipeline))
-    print(result)
     max_variants = 0
     max_image = 0
     
@@ -1026,7 +1024,6 @@ def exportAll(request):
         if i['Image Src'] != None:
             if max_image < len(i['Image Src']):
                 max_image = len(i['Image Src'])
-    print()
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Products"
@@ -1074,7 +1071,6 @@ def exportAll(request):
         row.extend(["","","","","",item.get("retail_price",""),"","","",""])
         img_src = item.get("Image Src", [])
         img_src_str = ""
-        print(img_src)
         for j in img_src:
             img_src_str = j +"," + img_src_str
         row.append(img_src_str)
@@ -1116,13 +1112,11 @@ def retrieveData(request):
         elif file.name.endswith('.txt'):
             df = pd.read_csv(file, sep='\t') 
             json_data = df.to_json(orient='records')
-            print(json_data)
         elif file.name.endswith('.pdf'):
             with pdfplumber.open(file) as pdf:
                 all_text = ""
                 for page in pdf.pages:
                     all_text += page.extract_text()
-            print(all_text)
         else:
             return data
     except Exception as e:
@@ -1283,7 +1277,6 @@ def createValueForVarientName(request):
         type_value_id = type_value_obj.id
     else:
         type_value_id = DatabaseModel.save_documents(type_value,{'name':name}).id
-    print(option_id,client_id,type_value_id)
     varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,"client_id":ObjectId(client_id),'option_value_id_list__in':[ObjectId(type_value_id)]})
     if varient_option_obj:
         data['is_created'] = False
@@ -1343,14 +1336,16 @@ def obtainDashboardCount(request):
     last_all_ids = []
     category_list = DatabaseModel.list_documents(category.objects, {'client_id': client_id})
     last_all_ids = []
-
+    parent_level_category_list = list()
     for category_obj in category_list:
+        parent_level_category_list.append({'id':str(category_obj.id),'name':category_obj.name})
         traverse_categories(category_obj, last_all_ids)
     data['category_project_dict'] = dict()
     for i in last_all_ids:
         data['category_project_dict'][i['name']] = DatabaseModel.count_documents(product_category_config.objects,{'category_id':str(i['id'])})
     data['total_last_level_category'] = len(last_all_ids)
     data['total_parent_level_category'] = len(category_list)
+    data['parent_level_category_list'] = parent_level_category_list
     pipeline = [
              {
             '$match':{'client_id':ObjectId(client_id)}
@@ -1513,7 +1508,6 @@ def obtainCategoryLog(request):
         for i in result[0]['category_log_list']:
             i['category_last_name'] = ""
             getCategoryLevelOrder(i)
-            print(i['category_last_name'])
             original_date = i['log_date'] 
             i['log_date_ist'] = convert_to_timezone(original_date, 'Asia/Kolkata').strftime('%Y-%m-%d %H:%M:%S')
             i['log_date'] = convert_to_timezone(original_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
@@ -1767,19 +1761,33 @@ def obtainProductVarientLog(request):
         return data
     return data
 
-
+from django.conf import settings
 @csrf_exempt
 def createBrand(request):
-    json_req = JSONParser().parse(request)
-    name = json_req.get("name")
+    name = request.POST.get('name')
+    image_file = request.FILES.get('logo')
     brand_obj = DatabaseModel.get_document(brand.objects,{'name':name})
+    
     data = dict()
     if brand_obj:
+        
         data['is_created'] = False
         data['error'] = "Ventor Already Present"
         return data
     else:
-        brand_obj = DatabaseModel.save_documents(brand,{'name':name})
+        if image_file:
+            # Define the path where the image will be stored
+            upload_dir = os.path.join(settings.MEDIA_ROOT, 'brands')  # Ensure this path exists
+            os.makedirs(upload_dir, exist_ok=True)
+
+            # Create the full path for the uploaded file
+            file_path = os.path.join("media/brands/", image_file.name)
+            
+            # Save the file to the defined path
+            with open(file_path, 'wb+') as destination:
+                for chunk in image_file.chunks():
+                    destination.write(chunk)  
+        brand_obj = DatabaseModel.save_documents(brand,{'name':name,'logo':file_path})
     data['is_created'] = True
     return data
 
@@ -1807,13 +1815,29 @@ def obtainBrand(request):
                 'name':1,
                 'logo':1,
             }
+        },{
+        '$addFields': {
+            'name_lowercase': { '$toLower': "$name" }
         }
+    },
+    {
+        '$sort': { 'name_lowercase': 1 }
+    },
     ]
     brand_list = list(brand.objects.aggregate(*pipeline))
-    print(brand_list)
+    protocol = 'http'  # You can adjust to 'https' if needed
+    
+    # Get the domain (IP or domain name)
+    host = request.get_host()  # Example: 192.168.1.100:8000
+
+    # Construct the full URL (protocol + host)
+    base_url = f"{protocol}://{host}/"
+
     for i in brand_list:
         i['id'] = str (i['_id'])
         del i['_id']
+        if i['logo']:
+            i['logo'] = base_url + i['logo'].lstrip('/')
     data['brand_list'] = brand_list
     data['brand_count'] = len(data['brand_list'])
     return data
@@ -1858,7 +1882,6 @@ def upload_file(request):
     fs = FileSystemStorage(location=upload_dir)
     filename = fs.save(file.name, file)
     file_path = os.path.join(fs.location, filename)
-    print(file_path)
     data['file_path'] = file_path
     return data
 
@@ -1870,7 +1893,6 @@ def saveXlData(request):
     field_data = request.POST.get('field_data')
     file_path = request.POST.get('file_path')
     data['status'] = False
-    print(">>>>>>>>>>>>>>>>>>>>>>>>",1)
     field_data = json.loads(field_data)
     xl_mapping_obj = DatabaseModel.get_document(xl_mapping.objects,{'user_id':user_login_id})
     if xl_mapping_obj:
@@ -1894,7 +1916,6 @@ def saveXlData(request):
     category_level_key = field_data.get('category level')
     stockv_key = field_data.get('stockv')
     client_id = get_current_client()
-    print(file_path)
     try:
         with open(file_path, 'r') as file:
             if file.name.endswith('.xlsx'):
@@ -1940,7 +1961,6 @@ def saveXlData(request):
             option_name = row_dict[f'Option{option_number} Name']
             option_value = row_dict[f'Option{option_number} Value']
             if is_varient:
-                print(option_number)
                 option_name = option_name_list[option_number-1]
             else:
                 option_name_list.append(option_name)
@@ -1958,7 +1978,6 @@ def saveXlData(request):
                 options.append({"name":option_name,"value": option_value})
             option_number += 1
         product_obj = DatabaseModel.get_document(products.objects,{"model":model,'client_id':ObjectId(client_id)})
-        print(">>>>>>>>>>>>>>>>>>>>>>>>",product_obj)
         if product_obj==None:
             
             category_list = []
@@ -2008,7 +2027,6 @@ def saveXlData(request):
             else:
                 brand_obj = DatabaseModel.save_documents(brand,{'name':brand_name.title()})
                 brand_id = brand_obj.id
-            print(">>>",key_features)
             product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name.title(),"long_description":long_description,"short_description":short_description,"brand_id":brand_id,"breadcrumb":breadcrumb,"key_features":str(key_features),'tags':Tags,'image':image_str_list})
             product_id = product_obj.id
             category_level = ""
@@ -2062,7 +2080,6 @@ def saveXlData(request):
             DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
         DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'add_to_set__image':image_str_list})
     file_path = "/home/dell/PLMP/plmp_backend/uploads"
-    print(">>>>>>>>>>>>>>>>>>>>>>>>",2)
     try:
         if os.path.exists(file_path) and os.path.isdir(file_path):
             shutil.rmtree(file_path)
@@ -2290,7 +2307,6 @@ def obtainClientName(request):
 #                 f.write(chunk)
 #         # Convert ODS to JSON
 #         json_data = ods_to_json(file_path)
-#         print(json_data)
 #         data['status'] = True
 #         data['data'] = json_data
 #         return JsonResponse(data, safe=False)
@@ -2306,11 +2322,9 @@ def obtainClientName(request):
 #         for row in sheet.getElementsByType(TableRow):
 #             row_data = {}
 #             cells = row.getElementsByType(TableCell)
-#             print(cells)
 #             if len(cells) > 1:
 #                 key = ''.join(node.nodeValue for node in cells[0].childNodes if node.nodeType == 3).strip() 
 #                 value = ''.join(node.nodeValue for node in cells[1].childNodes if node.nodeType == 3).strip()
-#                 print(key,value)
 #                 if key and value:
 #                     row_data[key] = value
 #             if row_data:
@@ -2388,7 +2402,6 @@ def updateRetailPrice(request):
     old_price = '0'
     for i in product_category_config_list:
         for j in i.product_id.options:
-            print("......",i.product_id.id)
             if str(i.product_id.brand_id) == json_req['brand_id']:
                 brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
                 if isinstance(j, DBRef):
@@ -2784,15 +2797,12 @@ def updateRevertPriceForCategory(request):
     }
     ]
     result = list(products.objects.aggregate(*pipeline))
-    print(result)
     for i in result:
         if json_req['price_option'] == 'finished_price':
             retail_price = str(float(i['finished_price']) * float(brand_category_price_obj_price))
-            print("")
             DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'retail_price':retail_price})
         else:
             retail_price = str(float(i['un_finished_price']) * float(brand_category_price_obj_price))
-            print("")
             DatabaseModel.update_documents(product_varient.objects,{'id':i['product_varient_id']},{'retail_price':retail_price})
     data = dict()
     data['is_updated'] = True
@@ -2947,7 +2957,6 @@ def updateRevertPriceForVarientOption(request):
     for i in result:
         i[price_option] = float(i[price_option])
         if price_symbol == '%':
-            print(i[price_option],brand_category_price_obj_price)
             i[price_option] = i[price_option]/(1+(float(brand_category_price_obj_price)/100.00))
         else:
             i[price_option] = float(i[price_option]) - float(brand_category_price_obj_price)
