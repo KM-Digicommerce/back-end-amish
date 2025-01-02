@@ -522,6 +522,9 @@ def obtainAllProductList(request):
     category_id = request.GET.get("category_id")
     brand_id = request.GET.get("brand_id")
     filter = request.GET.get("filter")
+    search_term = request.GET.get('search')
+    if search_term == None:
+        search_term = ""
     if filter == "true" or filter == None:
         reverse_check = -1
     else:
@@ -638,7 +641,6 @@ def obtainAllProductList(request):
             'upc_ean':{'$first':"$products.upc_ean"},
             'breadcrumb':{'$first':"$products.breadcrumb"},
             'brand':{'$first':"$brand.name"},
-            'product_name':{'$first':"$products.product_name"},
             'long_description':{'$first':"$products.long_description"},
             'short_description':{'$first':"$products.short_description"},
             'features':{'$first':"$products.features"},
@@ -652,7 +654,19 @@ def obtainAllProductList(request):
             'level':{'$first':'$category_level'},
             'category_id':{'$first':'$category_id'}
                 }
-            },{'$sort': {'_id':reverse_check}}
+            },{
+    '$match': {
+    '$or': [
+        { 'upc_ean': { '$regex': search_term, '$options': 'i' } },  
+        { 'short_description': { '$regex': search_term, '$options': 'i' } }, 
+        { 'mpn': { '$regex': search_term, '$options': 'i' } },  
+        { 'product_name': { '$regex': search_term, '$options': 'i' } },
+        { 'brand': { '$regex': search_term, '$options': 'i' } }, 
+        { 'model': { '$regex': search_term, '$options': 'i' } },
+        { 'features': { '$regex': search_term, '$options': 'i' } },
+]
+    }
+  },{'$sort': {'_id':reverse_check}}
         # }
     # }
     ]
@@ -969,6 +983,7 @@ def exportAll(request):
                 "mpn":{ "$first":"$mpn"},
                 "upc_ean":{ "$first":"$upc_ean"},
                 "product_name":{ "$first":"$product_name"},
+                "product_id":{ "$first":"$_id"},
                 "category level":{ "$first":"$product_category_config_ins.category_level"},
                 "category_id":{ "$first":"$product_category_config_ins.category_id"},
                 "long_description":{ "$first":"$long_description"},
@@ -998,7 +1013,7 @@ def exportAll(request):
                 "short_description":1, 
                 "brand":1,
                 "breadcrumb":1,
-                # "msrp":1,
+                "product_id":1,
                 "retail_price":1,
                 "Tags":1, 
                 "Variant SKU":1,
@@ -1011,6 +1026,8 @@ def exportAll(request):
                 "varient_option_list":1,
                 'mpn':1,
             }
+        },{
+            '$sort':{'product_id':-1}
         }
     
     ]
@@ -1031,7 +1048,7 @@ def exportAll(request):
     # "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
     # "Retail Price", "Unfinished Price", "Finished Price"
     # ]
-    headers = ["S.No","Handle","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
+    headers = ["S.No","Handle","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
     variant_headers = []
     for i in range(1, max_variants + 1):
         variant_headers.append(f"Option{i} Name")
@@ -1050,6 +1067,7 @@ def exportAll(request):
         row = [
             i + 1,
             item.get("product_name", ""),
+            item.get("Variant SKU", ""),
             item.get("product_name", ""),
             item.get("long_description", ""),
             item.get("brand", ""),
@@ -1068,14 +1086,21 @@ def exportAll(request):
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
-        row.extend(["","","","","",item.get("retail_price",""),"","","",""])
+        retail_price = item.get("retail_price",0.0)
+        retail_price = str(round(float(retail_price),2))
+        row.extend(["","","","","",retail_price,"","","",""])
         img_src = item.get("Image Src", [])
+        if img_src == "" or img_src ==None:
+            img_src = []
         img_src_str = ""
         for j in img_src:
-            img_src_str = j +"," + img_src_str
+            img_src_str = str(j) +"," + str(img_src_str)
         row.append(img_src_str)
         row.extend(["","","","","","","","","","","","","","","","","","","","",item.get("Key Features", ""),"","","","","","","","","","","","","","","","","",""])
-        row.append(item.get("Finished Price",""))
+        f_p = item.get("Finished Price",0.0)
+        if f_p:
+            f_p = str(round(float(f_p),2))
+        row.append(f_p)
         row.extend(["","","",""])
         worksheet.append(row)
     buffer = BytesIO()
@@ -1255,7 +1280,7 @@ def createVarientOption(request):
     if category_varient_obj:
         data = dict()
         data['is_created'] = False
-        data['error'] = "Varient Option Name Already Present"
+        data['error'] = "Variant already Exists"
         return data
     obtainlogForCategoryVarientOption(category_id,varient_option_id,"update",ObjectId(user_login_id),category_level)
     DatabaseModel.update_documents(category_varient.objects,{"id":category_varient_id},{'add_to_set__varient_option_id_list':varient_option_id})
@@ -1280,7 +1305,7 @@ def createValueForVarientName(request):
     varient_option_obj = DatabaseModel.get_document(varient_option.objects,{"option_name_id":option_id,"client_id":ObjectId(client_id),'option_value_id_list__in':[ObjectId(type_value_id)]})
     if varient_option_obj:
         data['is_created'] = False
-        data['error'] = "Value Already Present In This Varient Option"
+        data['error'] = "Variant Value already exists"
     else:
         DatabaseModel.update_documents(varient_option.objects,{"option_name_id":option_id,'client_id':client_id},{'add_to_set__option_value_id_list':type_value_id})
         data['is_created'] = True
@@ -1766,11 +1791,10 @@ from django.conf import settings
 def createBrand(request):
     name = request.POST.get('name')
     image_file = request.FILES.get('logo')
-    brand_obj = DatabaseModel.get_document(brand.objects,{'name':name})
-    
+    client_id = get_current_client()
+    brand_obj = DatabaseModel.get_document(brand.objects,{'name':name,'client_id':client_id})
     data = dict()
     if brand_obj:
-        
         data['is_created'] = False
         data['error'] = "Ventor Already Present"
         return data
@@ -1787,6 +1811,12 @@ def createBrand(request):
             with open(file_path, 'wb+') as destination:
                 for chunk in image_file.chunks():
                     destination.write(chunk)  
+        else:
+            client_obj = DatabaseModel.get_document(client.objects,{'client_id':client_id})
+            if client_obj:
+                file_path = client_obj.logo
+            else:
+                file_path=""
         brand_obj = DatabaseModel.save_documents(brand,{'name':name,'logo':file_path})
     data['is_created'] = True
     return data
@@ -1815,13 +1845,14 @@ def obtainBrand(request):
                 'name':1,
                 'logo':1,
             }
-        },{
-        '$addFields': {
-            'name_lowercase': { '$toLower': "$name" }
-        }
-    },
+        },
+    #     {
+    #     '$addFields': {
+    #         'name_lowercase': { '$toLower': "$name" }
+    #     }
+    # },
     {
-        '$sort': { 'name_lowercase': 1 }
+        '$sort': { '_id': -1 }
     },
     ]
     brand_list = list(brand.objects.aggregate(*pipeline))
@@ -1835,6 +1866,7 @@ def obtainBrand(request):
 
     for i in brand_list:
         i['id'] = str (i['_id'])
+        i['product_count'] = DatabaseModel.count_documents(products.objects,{'brand_id':i['id']})
         del i['_id']
         if i['logo']:
             i['logo'] = base_url + i['logo'].lstrip('/')
@@ -1872,8 +1904,8 @@ def upload_file(request):
         data['Database_list'] =xl_mapping_obj.data
     data['Database_options'] = [
         "model", "upc_ean", "product_name", "long_description", "short_description", "brand",
-        "category level", "breadcrumb", "msrp", "base_price", "Tags", "Variant SKU",
-        "Un Finished Price", "Finished Price", "Key Features", 
+        "category level", "breadcrumb", "msrp", "base_price", "Tags", "Variant_SKU",
+        "Un_Finished_Price", "Finished_Price", "Key_Features", 
         "stock"
     ]
     upload_dir = 'uploads/' 
@@ -1909,10 +1941,10 @@ def saveXlData(request):
     # msrp_key = field_data.get('msrp')
     # base_price_key = field_data.get('base_price')
     Tags_key = field_data.get('Tags')
-    Variant_SKU_key = field_data.get('Variant SKU')
-    Un_Finished_Price_key = field_data.get('Un Finished Price')
-    Finished_Price_key = field_data.get('Finished Price')
-    Key_Features_key = field_data.get('Key Features')
+    Variant_SKU_key = field_data.get('Variant_SKU')
+    Un_Finished_Price_key = field_data.get('Un_Finished_Price')
+    Finished_Price_key = field_data.get('Finished_Price')
+    Key_Features_key = field_data.get('Key_Features')
     category_level_key = field_data.get('category level')
     stockv_key = field_data.get('stockv')
     client_id = get_current_client()
@@ -1943,7 +1975,9 @@ def saveXlData(request):
         Tags = None if isinstance(row_dict.get(Tags_key), float) and math.isnan(row_dict.get(Tags_key)) else row_dict.get(Tags_key)
         Variant_SKU = None if isinstance(row_dict.get(Variant_SKU_key), float) and math.isnan(row_dict.get(Variant_SKU_key)) else row_dict.get(Variant_SKU_key)
         Un_Finished_Price = "0" if isinstance(row_dict.get(Un_Finished_Price_key), float) and math.isnan(row_dict.get(Un_Finished_Price_key)) else row_dict.get(Un_Finished_Price_key)
+        
         Finished_Price = "0" if isinstance(row_dict.get(Finished_Price_key), float) and math.isnan(row_dict.get(Finished_Price_key)) else row_dict.get(Finished_Price_key)
+        
         # img_src = None if isinstance(row_dict.get("Image Src"), float) and math.isnan(row_dict.get("Image Src")) else row_dict.get("Image Src")
         key_features = None if isinstance(row_dict.get(Key_Features_key), float) and math.isnan(row_dict.get(Key_Features_key)) else row_dict.get(Key_Features_key)
         stockv = None if isinstance(row_dict.get(stockv_key), float) and math.isnan(row_dict.get(stockv_key)) else row_dict.get(stockv_key)
@@ -1977,7 +2011,7 @@ def saveXlData(request):
             if isinstance(option_name, str) :
                 options.append({"name":option_name,"value": option_value})
             option_number += 1
-        product_obj = DatabaseModel.get_document(products.objects,{"model":model,'client_id':ObjectId(client_id)})
+        product_obj = DatabaseModel.get_document(products.objects,{"model":model,'product_name':product_name,'client_id':ObjectId(client_id)})
         if product_obj==None:
             
             category_list = []
@@ -1990,35 +2024,45 @@ def saveXlData(request):
                     category_obj = DatabaseModel.get_document(category.objects,{'name':i,'client_id':client_id})
                     if category_obj == None:
                         category_obj = DatabaseModel.save_documents(category,{'name':i})
+                        logForCategory(category_obj.id,"create",user_login_id,'level-1')
                     previous_category_id = category_obj.id
                 if index == 1:
                     level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'name':i,'client_id':client_id})
                     if level_one_category_obj == None:
                         level_one_category_obj = DatabaseModel.save_documents(level_one_category,{'name':i})
+                        logForCategory(level_one_category_obj.id,"create",user_login_id,'level-1')
                     DatabaseModel.update_documents(category.objects,{"id":previous_category_id},{"push__level_one_category_list":level_one_category_obj.id})
                     previous_category_id = level_one_category_obj.id
                 if index == 2:
                     level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'name':i,'client_id':client_id})
                     if level_two_category_obj == None:
                         level_two_category_obj = DatabaseModel.save_documents(level_two_category,{'name':i})
+                        logForCategory(level_two_category_obj.id,"create",user_login_id,'level-1')
+                        
                     DatabaseModel.update_documents(level_one_category.objects,{"id":previous_category_id},{"push__level_two_category_list":level_two_category_obj.id})
                     previous_category_id = level_two_category_obj.id
                 if index == 3:
                     level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'name':i,'client_id':client_id})
                     if level_three_category_obj == None:
                         level_three_category_obj = DatabaseModel.save_documents(level_three_category,{'name':i})
+                        logForCategory(level_three_category_obj.id,"create",user_login_id,'level-1')
+                        
                     DatabaseModel.update_documents(level_two_category.objects,{"id":previous_category_id},{"push__level_three_category_list":level_three_category_obj.id})
                     previous_category_id = level_three_category_obj.id
                 if index == 4:
                     level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'name':i,'client_id':client_id})
                     if level_four_category_obj == None:
                         level_four_category_obj = DatabaseModel.save_documents(level_four_category,{'name':i})
+                        logForCategory(level_four_category_obj.id,"create",user_login_id,'level-1')
+                        
                     DatabaseModel.update_documents(level_three_category.objects,{"id":previous_category_id},{"push__level_four_category_list":level_four_category_obj.id})
                     previous_category_id = level_four_category_obj.id
                 if index == 5:
                     level_five_category_obj = DatabaseModel.get_document(level_five_category.objects,{'name':i,'client_id':client_id})
                     if level_five_category_obj == None:
                         level_five_category_obj = DatabaseModel.save_documents(level_five_category,{'name':i})
+                        logForCategory(level_five_category_obj.id,"create",user_login_id,'level-1')
+                        
                     DatabaseModel.update_documents(level_four_category.objects,{"id":previous_category_id},{"push__level_five_category_list":level_five_category_obj.id})
                     previous_category_id = level_five_category_obj.id
             brand_obj = DatabaseModel.get_document(brand.objects,{'name':brand_name.title()})
@@ -2027,8 +2071,9 @@ def saveXlData(request):
             else:
                 brand_obj = DatabaseModel.save_documents(brand,{'name':brand_name.title()})
                 brand_id = brand_obj.id
-            product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),"product_name":product_name.title(),"long_description":long_description,"short_description":short_description,"brand_id":brand_id,"breadcrumb":breadcrumb,"key_features":str(key_features),'tags':Tags,'image':image_str_list})
+            product_obj = DatabaseModel.save_documents(products,{"model":model,"upc_ean":str(upc_ean),'mpn':str(upc_ean),"product_name":product_name.title(),"long_description":long_description,"short_description":short_description,"brand_id":brand_id,"breadcrumb":breadcrumb,"key_features":str(key_features),'tags':Tags,'image':image_str_list})
             product_id = product_obj.id
+            logForCreateProduct(product_id,user_login_id,"create")
             category_level = ""
             if len(category_list) == 1:
                 category_level = "level-1"
@@ -2063,22 +2108,23 @@ def saveXlData(request):
                     retail_price = str(float(Un_Finished_Price) * float(cat_retail_price))
             else:
                 retail_price = str(float(Finished_Price) * float(1))
-        product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
-        createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
-        
-        logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
-        for i in options:
-            type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':i['name'].title()})
-            if type_name_obj ==None:
-                type_name_obj = DatabaseModel.save_documents(type_name,{'name':i['name'].title()})   
-            type_name_id = type_name_obj.id
-            type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':str(i['value']).title()})
-            if type_value_obj ==None:
-                type_value_obj = DatabaseModel.save_documents(type_value,{'name':str(i['value']).title()})   
-            type_value_id = type_value_obj.id
-            product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":type_name_id,"option_value_id":type_value_id})
-            DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
-        DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'add_to_set__image':image_str_list})
+        product_varient_obj = DatabaseModel.get_document(product_varient.objects,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
+        if product_varient_obj == None:
+            product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":Variant_SKU,"finished_price":str(Finished_Price),"un_finished_price":str(Un_Finished_Price),"quantity":stockv,"retail_price":retail_price})
+            createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
+            logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
+            for i in options:
+                type_name_obj = DatabaseModel.get_document(type_name.objects,{'name':i['name'].title()})
+                if type_name_obj ==None:
+                    type_name_obj = DatabaseModel.save_documents(type_name,{'name':i['name'].title()})   
+                type_name_id = type_name_obj.id
+                type_value_obj = DatabaseModel.get_document(type_value.objects,{'name':str(i['value']).title()})
+                if type_value_obj ==None:
+                    type_value_obj = DatabaseModel.save_documents(type_value,{'name':str(i['value']).title()})   
+                type_value_id = type_value_obj.id
+                product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":type_name_id,"option_value_id":type_value_id})
+                DatabaseModel.update_documents(product_varient.objects,{"id":product_varient_obj.id},{"add_to_set__varient_option_id":product_varient_option_obj.id})
+            DatabaseModel.update_documents(products.objects,{"id":product_id},{"add_to_set__options":product_varient_obj.id,'add_to_set__image':image_str_list})
     file_path = "/home/dell/PLMP/plmp_backend/uploads"
     try:
         if os.path.exists(file_path) and os.path.isdir(file_path):
@@ -2400,26 +2446,29 @@ def updateRetailPrice(request):
     product_category_config_list = DatabaseModel.list_documents(product_category_config.objects,{'category_id__in':json_req['category_id_list']})
     createBrandCategoryWisePrice(json_req)
     old_price = '0'
+    
     for i in product_category_config_list:
         for j in i.product_id.options:
-            if str(i.product_id.brand_id) == json_req['brand_id']:
+            if str(i.product_id.brand_id.id) == json_req['brand_id']:
                 brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':str(i.category_id),'brand_id':ObjectId(json_req['brand_id']),'is_active':True})
                 if isinstance(j, DBRef):
-                    # Dereference and access the data
                     old_price = '0'
                     j.retail_price = json_req['price']
                 else:
                     old_price = j.retail_price if 'retail_price' in j else '0'
                 if brand_category_price_obj:
                     if brand_category_price_obj.price_option == "finished_price":
+                        
                         if j.finished_price == '' or j.finished_price =='None'or j.finished_price ==None:
                             j.finished_price = '0' 
                         j.retail_price = str(float(j.finished_price) * float(json_req['price']))
                     else:
+                        
                         if j.un_finished_price == '' or j.un_finished_price =='None' or j.un_finished_price ==None:
                             j.un_finished_price = '0'
                         j.retail_price = str(float(j.un_finished_price) * float(json_req['price']))
                 if j.retail_price == None:
+                    
                     j.retail_price = "0"
             j.save()
             client_id = get_current_client()
@@ -2512,8 +2561,9 @@ def obtainVarientOptionForRetailPrice(request):
 def obtainVarientOptionValueForRetailPrice(request):
     data = dict()
     option_name_id = request.GET.get('id')
+    client_id = get_current_client()
     data['varient_option_value_list'] = []
-    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':option_name_id})
+    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':option_name_id,'client_id':client_id})
     if varient_option_obj:
         for i in varient_option_obj.option_value_id_list:
             data['varient_option_value_list'].append({'id':str(i.id),"name":i.name})
@@ -2638,8 +2688,12 @@ def obtainProductBasedOnVarientOption(request):
         }
     ]
     result = list(products.objects.aggregate(*pipeline))
+    product_set = list()
     for i in result:
         i['brand_id'] = str(json_req['brand_id'])
+        product_set.append(i['product_id'])
+        if i[price_option] == None:
+            i[price_option] = 'finished_price'
         i[price_option] = float(i[price_option])
         json_req['price'] = float(json_req['price'])
         i['price'] = str(json_req['price'])
@@ -2656,6 +2710,7 @@ def obtainProductBasedOnVarientOption(request):
             category_id = product_category_config_obj.category_id
         i['category_id'] = product_category_config_obj.category_id
         brand_category_price_obj = DatabaseModel.get_document(brand_category_price.objects,{'category_id':category_id,'brand_id':ObjectId(json_req['brand_id']),'price_option':price_option,'is_active':True})
+        i['old_retail_price'] = i['retail_price'] 
         if brand_category_price_obj:
             i['retail_price'] =  str(i[price_option] * float(brand_category_price_obj.price))
         else:
@@ -2664,13 +2719,18 @@ def obtainProductBasedOnVarientOption(request):
         i['price_option'] = price_option
         i['option_value_id'] =json_req['option_value_id']
         i['option_name_id'] =json_req['option_name_id']
-    return result
+    print("?????????",product_set)
+    data = dict()
+    data['result'] = result
+    data['product_count'] = len(set(product_set))
+    return data
 
 @csrf_exempt
 def saveChangesForVarientOption(request):
     json_req = JSONParser().parse(request)
     result_list = json_req['result_list'] 
     data = dict()
+    data['result_list'] = json_req['result_list']
     data['result_list'] = json_req['result_list']
     option_value_id_list = [ObjectId(i) for i in result_list[0]['option_value_id']]
     
