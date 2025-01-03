@@ -3030,3 +3030,14 @@ def updateRevertPriceForVarientOption(request):
     data = dict()
     data['is_updated'] = True
     return data
+
+
+def obtainUserBasedOnClient(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
+    client_id = get_current_client()
+    user_obj_list  = DatabaseModel.list_documents(user.objects,{'client_id':client_id,'id__ne':user_login_id})
+    data = dict()
+    data['user_list'] = list()
+    for i in user_obj_list:
+        data['user_list'].append({'id':str(i['id']),'name':i['name'],'role':i['role'],'is_active':i['is_active'] if 'is_active' in i else False })
+    return data

@@ -20,6 +20,7 @@ class user(Document):
     role = fields.StringField()
     password = fields.StringField()
     client_id = fields.ReferenceField(client)
+    is_active = fields.BooleanField(default=False)
     def generate_default_username(self):
         random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
         random_password = ''.join(random.choices(string.ascii_lowercase + string.digits, k=5))
