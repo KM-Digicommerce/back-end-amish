@@ -1006,6 +1006,7 @@ def exportAll(request):
                 "_id": 0,
                 "model":1,
                 "upc_ean":1,
+                "mpn":1,
                 "category level":1,
                 "category_id":1,
                 "product_name":1,
@@ -1048,7 +1049,7 @@ def exportAll(request):
     # "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
     # "Retail Price", "Unfinished Price", "Finished Price"
     # ]
-    headers = ["S.No","Handle","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
+    headers = ["S.No","Handle","MPN","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
     variant_headers = []
     for i in range(1, max_variants + 1):
         variant_headers.append(f"Option{i} Name")
@@ -1067,6 +1068,7 @@ def exportAll(request):
         row = [
             i + 1,
             item.get("product_name", ""),
+            item.get("mpn", ""),
             item.get("Variant SKU", ""),
             item.get("product_name", ""),
             item.get("long_description", ""),
