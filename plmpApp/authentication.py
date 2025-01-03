@@ -39,6 +39,8 @@ def loginUser(request):
         token = jwt.encode(payload=payload, key=SIMPLE_JWT['SIGNING_KEY'], algorithm=SIMPLE_JWT['ALGORITHM'])
         # token = token.decode('utf-8')
         valid = True
+        user_data_obj.is_active = True
+        user_data_obj.save()
         response = createJsonResponse(request, token)
         createCookies(token, response)
         response.data['data']['user_login_id'] = str(user_data_obj.id)
