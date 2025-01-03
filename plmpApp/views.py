@@ -1796,7 +1796,7 @@ def createBrand(request):
     data = dict()
     if brand_obj:
         data['is_created'] = False
-        data['error'] = "Ventor Already Present"
+        data['error'] = "This Vendor Already Exists"
         return data
     else:
         if image_file:
