@@ -229,6 +229,8 @@ class product_varient(Document):
     finished_price = fields.StringField()
     un_finished_price = fields.StringField()
     quantity = fields.StringField()
+    is_active = fields.BooleanField()
+    
     total_price = fields.StringField()
     retail_price = fields.StringField(default="0")
 
@@ -245,6 +247,7 @@ class products(Document):
     attributes = fields.StringField()
     tags = fields.StringField()
     msrp = fields.StringField()
+    is_active = fields.BooleanField()
     base_price = fields.StringField()
     discount_price = fields.StringField(default = "0")
     dealer_price = fields.StringField(default = "0")

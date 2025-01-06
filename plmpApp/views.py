@@ -784,7 +784,7 @@ def productUpdate(request):
 @csrf_exempt
 def varientUpdate(request):
     json_req = JSONParser().parse(request)
-    varient_obj = json_req['varient_obj']
+    varient_obj = json_req
     DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku_number"],"finished_price":varient_obj["finished_price"],"un_finished_price":varient_obj["un_finished_price"],"quantity":varient_obj["quantity"]})
     data = dict()
     data['is_updated'] = True
@@ -857,6 +857,7 @@ def obtainAllVarientList(request):
     {
         '$group': {
             "_id":"$product_varient_ins._id",
+            "id": { "$first": "$product_varient_ins._id" },
             "sku_number": { "$first": "$product_varient_ins.sku_number" },
             "is_active": { "$first": "$product_varient_ins.is_active" },
             "finished_price": { "$first": "$product_varient_ins.finished_price" },
@@ -875,6 +876,8 @@ def obtainAllVarientList(request):
             '$project': {
                 "_id": 0,
                 "sku_number":1,
+                "id":1,
+                "is_active":1,
                 'retail_price':1,
             "finished_price":1,
             "un_finished_price":1,
@@ -885,6 +888,8 @@ def obtainAllVarientList(request):
         }
     ]
     result = list(products.objects.aggregate(*pipeline))
+    for i in result:
+        i['id'] = str(i['id'])
     return  result
 
 
@@ -3049,10 +3054,13 @@ def obtainUserBasedOnClient(request):
 def UpdateProductActiveInActive(request):
     json_req = JSONParser().parse(request)
     products_obj = DatabaseModel.get_document(products.objects,{'id':json_req['id']})
+    print(products_obj)
     if products_obj:
-        products_obj.is_active = json_req['status']
+        print(products_obj.is_active)
+        products_obj.is_active = json_req['is_active']
+        print(products_obj.is_active)
         for i in products_obj.options:
-            i.is_active = json_req['status']
+            i.is_active = json_req['is_active']
             i.save()
         products_obj.save()
     data = dict()
@@ -3062,10 +3070,10 @@ def UpdateProductActiveInActive(request):
 @csrf_exempt
 def UpdateVarientActiveInActive(request):
     json_req = JSONParser().parse(request)
-    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'id':json_req['id']})
-    if varient_option_obj:
-        varient_option_obj.is_active = json_req['status']
-        varient_option_obj.save()
+    product_varient_obj = DatabaseModel.get_document(product_varient.objects,{'id':json_req['id']})
+    if product_varient_obj:
+        product_varient_obj.is_active = json_req['is_active']
+        product_varient_obj.save()
     data = dict()
     data['is_update'] = True
     return data
