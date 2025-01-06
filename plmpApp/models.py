@@ -28,10 +28,10 @@ class user(Document):
         self.password = random_password
 
     def save(self, *args, **kwargs):
-        if not self.user_name:
+        if not self.user_name: 
             self.generate_default_username()
         from .custom_middleware import get_current_client
-        client_id = ObjectId(get_current_client())
+        client_id = ObjectId(get_current_client())          
         self.client_id = ObjectId(client_id)
         return super(user, self).save(*args, **kwargs)
 
