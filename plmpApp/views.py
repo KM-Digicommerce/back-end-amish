@@ -3086,16 +3086,27 @@ def obtainInActiveProducts(request):
     if search_term == None:
         search_term = ""
     pipeline = [
+        {
+        '$lookup': {
+            'from': 'products',
+            'localField': 'product_id',
+            'foreignField': '_id',
+            'as': 'products'
+        }
+    }, 
     {
-            "$match":{'is_active':False}
+            '$unwind': {
+                'path': '$products',
+                'preserveNullAndEmptyArrays': True
+            }
         },
     {
-        "$match":{'client_id':ObjectId(client_id)}
+        "$match":{'products.client_id':ObjectId(client_id)}
     },
     {
         '$lookup': {
             'from': 'brand',
-            'localField': 'brand_id',
+            'localField': 'products.brand_id',
             'foreignField': '_id',
             'as': 'brand'
         }
@@ -3111,22 +3122,23 @@ def obtainInActiveProducts(request):
             "_id":'$_id',
             # 'product_list': {
             #     "$push": {
-            'product_name':{'$first': "$product_name"},
-            'product_id':{'$first': "$_id"},
-            'model':{'$first':"$model"},
-            'upc_ean':{'$first':"$upc_ean"},
-            'breadcrumb':{'$first':"$breadcrumb"},
+            'product_name':{'$first': "$products.product_name"},
+            'product_id':{'$first': "$products._id"},
+            'model':{'$first':"$products.model"},
+            'upc_ean':{'$first':"$products.upc_ean"},
+            'is_active':{'$first':"$products.is_active"},
+            'breadcrumb':{'$first':"$products.breadcrumb"},
             'brand':{'$first':"$brand.name"},
-            'long_description':{'$first':"$long_description"},
-            'short_description':{'$first':"$short_description"},
-            'features':{'$first':"$features"},
-            'attributes':{'$first':"$attributes"},
-            'tags':{'$first':"$tags"},
-            'msrp':{'$first':"$msrp"},
-            'mpn':{'$first':"$mpn"},
-            'base_price':{'$first':"$base_price"},
-            'key_features':{'$first':"$key_features"},
-            'image':{'$first':"$image"},
+            'long_description':{'$first':"$products.long_description"},
+            'short_description':{'$first':"$products.short_description"},
+            'features':{'$first':"$products.features"},
+            'attributes':{'$first':"$products.attributes"},
+            'tags':{'$first':"$products.tags"},
+            'msrp':{'$first':"$products.msrp"},
+            'mpn':{'$first':"$products.mpn"},
+            'base_price':{'$first':"$products.base_price"},
+            'key_features':{'$first':"$products.key_features"},
+            'image':{'$first':"$products.image"},
             'level':{'$first':'$category_level'},
             'category_id':{'$first':'$category_id'}
                 }
@@ -3141,9 +3153,12 @@ def obtainInActiveProducts(request):
         { 'model': { '$regex': search_term, '$options': 'i' } },
         { 'features': { '$regex': search_term, '$options': 'i' } },
 ]
-    }}
+    }
+  }
+        # }
+    # }
     ]
-    result = list(products.objects.aggregate(*pipeline))
+    result = list(product_category_config.objects.aggregate(*pipeline))
     data = dict()
     for j in result:
         del (j['_id'])
