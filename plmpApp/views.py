@@ -785,7 +785,8 @@ def productUpdate(request):
 def varientUpdate(request):
     json_req = JSONParser().parse(request)
     varient_obj = json_req
-    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":varient_obj["finishedPrice"],"un_finished_price":varient_obj["unfinishedPrice"],"quantity":varient_obj["quantity"],"retail_price":varient_obj["retailPrice"]})
+    print(">>>,",varient_obj)
+    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":varient_obj["finishedPrice"],"un_finished_price":varient_obj["unfinishedPrice"],"quantity":varient_obj["quantity"],"retail_price":str(varient_obj["retailPrice"])})
     data = dict()
     data['is_updated'] = True
     return data
