@@ -639,6 +639,7 @@ def obtainAllProductList(request):
             'product_id':{'$first': "$products._id"},
             'model':{'$first':"$products.model"},
             'upc_ean':{'$first':"$products.upc_ean"},
+            'is_active':{'$first':"$products.is_active"},
             'breadcrumb':{'$first':"$products.breadcrumb"},
             'brand':{'$first':"$brand.name"},
             'long_description':{'$first':"$products.long_description"},
@@ -781,11 +782,10 @@ def productUpdate(request):
 
 
 @csrf_exempt
-def varientBulkUpdate(request):
+def varientUpdate(request):
     json_req = JSONParser().parse(request)
-    varient_obj_list = json_req['varient_obj_list']
-    for i in varient_obj_list:
-        DatabaseModel.update_documents(product_varient.objects,{'id':i['id']},{'sku_number':i[""],"finished_price":i["finished_price"],"un_finished_price":i["un_finished_price"],"quantity":i["quantity"]})
+    varient_obj = json_req['varient_obj']
+    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku_number"],"finished_price":varient_obj["finished_price"],"un_finished_price":varient_obj["un_finished_price"],"quantity":varient_obj["quantity"]})
     data = dict()
     data['is_updated'] = True
     return data
@@ -858,6 +858,7 @@ def obtainAllVarientList(request):
         '$group': {
             "_id":"$product_varient_ins._id",
             "sku_number": { "$first": "$product_varient_ins.sku_number" },
+            "is_active": { "$first": "$product_varient_ins.is_active" },
             "finished_price": { "$first": "$product_varient_ins.finished_price" },
             "un_finished_price": { "$first": "$product_varient_ins.un_finished_price" },
             "retail_price": { "$first": "$product_varient_ins.retail_price" },
@@ -1049,7 +1050,7 @@ def exportAll(request):
     # "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
     # "Retail Price", "Unfinished Price", "Finished Price"
     # ]
-    headers = ["S.No","Handle","MPN","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
+    headers = ["S.No","MPN","Handle","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
     variant_headers = []
     for i in range(1, max_variants + 1):
         variant_headers.append(f"Option{i} Name")
@@ -1067,8 +1068,8 @@ def exportAll(request):
         getCategoryLevelOrder(i_dict)
         row = [
             i + 1,
-            item.get("product_name", ""),
             item.get("mpn", ""),
+            item.get("product_name", ""),
             item.get("Variant SKU", ""),
             item.get("product_name", ""),
             item.get("long_description", ""),
@@ -3043,3 +3044,103 @@ def obtainUserBasedOnClient(request):
     for i in user_obj_list:
         data['user_list'].append({'id':str(i['id']),'name':i['name'],'role':i['role'],'is_active':i['is_active'] if 'is_active' in i else False })
     return data
+
+@csrf_exempt
+def UpdateProductActiveInActive(request):
+    json_req = JSONParser().parse(request)
+    products_obj = DatabaseModel.get_document(products.objects,{'id':json_req['id']})
+    if products_obj:
+        products_obj.is_active = json_req['status']
+        for i in products_obj.options:
+            i.is_active = json_req['status']
+            i.save()
+        products_obj.save()
+    data = dict()
+    data['is_update'] = True
+    return data
+
+@csrf_exempt
+def UpdateVarientActiveInActive(request):
+    json_req = JSONParser().parse(request)
+    varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'id':json_req['id']})
+    if varient_option_obj:
+        varient_option_obj.is_active = json_req['status']
+        varient_option_obj.save()
+    data = dict()
+    data['is_update'] = True
+    return data
+
+@csrf_exempt
+def obtainInActiveProducts(request):
+    client_id = get_current_client()
+    search_term = request.GET.get('search')
+    if search_term == None:
+        search_term = ""
+    pipeline = [
+    {
+            "$match":{'is_active':False}
+        },
+    {
+        "$match":{'client_id':ObjectId(client_id)}
+    },
+    {
+        '$lookup': {
+            'from': 'brand',
+            'localField': 'brand_id',
+            'foreignField': '_id',
+            'as': 'brand'
+        }
+    }, 
+    {
+            '$unwind': {
+                'path': '$brand',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+    {
+        '$group': {
+            "_id":'$_id',
+            # 'product_list': {
+            #     "$push": {
+            'product_name':{'$first': "$product_name"},
+            'product_id':{'$first': "$_id"},
+            'model':{'$first':"$model"},
+            'upc_ean':{'$first':"$upc_ean"},
+            'breadcrumb':{'$first':"$breadcrumb"},
+            'brand':{'$first':"$brand.name"},
+            'long_description':{'$first':"$long_description"},
+            'short_description':{'$first':"$short_description"},
+            'features':{'$first':"$features"},
+            'attributes':{'$first':"$attributes"},
+            'tags':{'$first':"$tags"},
+            'msrp':{'$first':"$msrp"},
+            'mpn':{'$first':"$mpn"},
+            'base_price':{'$first':"$base_price"},
+            'key_features':{'$first':"$key_features"},
+            'image':{'$first':"$image"},
+            'level':{'$first':'$category_level'},
+            'category_id':{'$first':'$category_id'}
+                }
+            },{
+    '$match': {
+    '$or': [
+        { 'upc_ean': { '$regex': search_term, '$options': 'i' } },  
+        { 'short_description': { '$regex': search_term, '$options': 'i' } }, 
+        { 'mpn': { '$regex': search_term, '$options': 'i' } },  
+        { 'product_name': { '$regex': search_term, '$options': 'i' } },
+        { 'brand': { '$regex': search_term, '$options': 'i' } }, 
+        { 'model': { '$regex': search_term, '$options': 'i' } },
+        { 'features': { '$regex': search_term, '$options': 'i' } },
+]
+    }}
+    ]
+    result = list(products.objects.aggregate(*pipeline))
+    data = dict()
+    for j in result:
+        del (j['_id'])
+        j['product_id'] = str(j['product_id']) if 'product_id'in j else ""
+        getCategoryLevelOrder(j)
+    data['product_list'] = result
+    data['product_count'] = len(result)
+    return data
+

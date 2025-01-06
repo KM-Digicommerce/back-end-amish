@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientBulkUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,createUser,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice, obtainVarientOptionForRetailPrice, obtainVarientOptionValueForRetailPrice,obtainProductBasedOnVarientOption,saveChangesForVarientOption,obtainRevertPreviousAndCurrentPriceForCategory,obtainRevertPreviousAndCurrentPriceForVarientOption,updateRevertPriceForCategory,updateRevertPriceForVarientOption, obtainUserBasedOnClient
+from .views import v1, create_user,createCategory,createCategory1, createCategory2,createCategory3,createCategory4,createCategory5,createProduct,deleteCategory, updateCategory,obtainCategoryAndSections, obtainAllProductList, upload_file, obtainProductDetails, productBulkUpdate, productUpdate, obtainAllVarientList, exportAll, retrieveData, varientUpdate ,obtainVarientForCategory,createVarientOption,createValueForVarientName,obtainDashboardCount,createUser,createAndAddVarient,swapProductToCategory,obtainCategoryLog,obtainCategoryVarientLog,obtainProductLog,obtainProductVarientLog,createBrand,obtainBrand ,saveXlData,obtainPriceLog,obtainClient,createClient,obtainSuperAdminDashboard,obtainClientDetail,addUserAndRoleForClient, categoryLevelForChildCategory, obtainClientName,obtainAllLastLevelIds, obtainBrandCategoryWisePrice,obtainBrandCategoryWisePriceTable,updateRetailPrice, updateActiveRetailPrice, obtainRetailBrandPrice, obtainVarientOptionForRetailPrice, obtainVarientOptionValueForRetailPrice,obtainProductBasedOnVarientOption,saveChangesForVarientOption,obtainRevertPreviousAndCurrentPriceForCategory,obtainRevertPreviousAndCurrentPriceForVarientOption,updateRevertPriceForCategory,updateRevertPriceForVarientOption, obtainUserBasedOnClient,UpdateProductActiveInActive,UpdateVarientActiveInActive,obtainInActiveProducts
 from .authentication import loginUser,sendOtp,resetPassword
 
 urlpatterns = [    
@@ -27,7 +27,7 @@ urlpatterns = [
     path('obtainAllVarientList/', obtainAllVarientList, name='obtainAllVarientList'), 
     path('exportAll/', exportAll, name='exportAll'), 
     path('retrieveData/', retrieveData, name='retrieveData'),
-    path('varientBulkUpdate/', varientBulkUpdate, name='varientBulkUpdate'),
+    path('varientUpdate/', varientUpdate, name='varientUpdate'),
     path('obtainVarientForCategory/', obtainVarientForCategory, name='obtainVarientForCategory'),
     path('createVarientOption/', createVarientOption, name='createVarientOption'),
     path('createValueForVarientName/', createValueForVarientName, name='createValueForVarientName'),
@@ -65,5 +65,7 @@ urlpatterns = [
     path('updateRevertPriceForCategory/', updateRevertPriceForCategory, name='updateRevertPriceForCategory'),
     path('updateRevertPriceForVarientOption/', updateRevertPriceForVarientOption, name='updateRevertPriceForVarientOption'),
     path('obtainUserBasedOnClient/', obtainUserBasedOnClient, name='obtainUserBasedOnClient'),
-    
+    path('UpdateProductActiveInActive/', UpdateProductActiveInActive, name='UpdateProductActiveInActive'),
+    path('UpdateVarientActiveInActive/', UpdateVarientActiveInActive, name='UpdateVarientActiveInActive'),
+    path('obtainInActiveProducts/', obtainInActiveProducts, name='obtainInActiveProducts'),
 ]
