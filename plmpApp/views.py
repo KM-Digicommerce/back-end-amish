@@ -3086,6 +3086,7 @@ def obtainInActiveProducts(request):
     if search_term == None:
         search_term = ""
     pipeline = [
+        
         {
         '$lookup': {
             'from': 'products',
@@ -3093,7 +3094,9 @@ def obtainInActiveProducts(request):
             'foreignField': '_id',
             'as': 'products'
         }
-    }, 
+    },  {
+        "$match":{'products.is_active':False}
+    },
     {
             '$unwind': {
                 'path': '$products',
