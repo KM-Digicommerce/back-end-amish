@@ -539,33 +539,58 @@ def obtainAllProductList(request):
     
     elif category_id:
         all_ids = []
-
-        # Map levels to their respective model and attribute names
-        level_map = {
-            "level-1": ("category", "level_one_category_list"),
-            "level-2": ("level_one_category", "level_two_category_list"),
-            "level-3": ("level_two_category", "level_three_category_list"),
-            "level-4": ("level_three_category", "level_four_category_list"),
-            "level-5": ("level_four_category", "level_five_category_list"),
-        }
-
-        model_name, child_attr = level_map.get(level_name, (None, None))
-        if model_name:
-            model_class = globals()[model_name]
-            category_obj = DatabaseModel.get_document(model_class.objects, {'id': category_id, "client_id": client_id} if level_name == "level-1" else {'id': category_id})
+        if level_name == "level-1":
+            category_obj = DatabaseModel.get_document(category.objects,{'id':category_id,"client_id":client_id})
             if category_obj:
-                def collect_ids(obj, attr_chain):
-                    """Recursively collect IDs from nested category lists."""
-                    all_ids.append(obj.id)
-                    if attr_chain:
-                        child_attr = attr_chain[0]
-                        for child in getattr(obj, child_attr, []):
-                            collect_ids(child, attr_chain[1:])
-                
-                attr_chain = [level_map[lvl][1] for lvl in level_map if lvl >= level_name]
-                collect_ids(category_obj, attr_chain)
+                all_ids.append(category_id)
+                for i in category_obj.level_one_category_list:
+                    all_ids.append(i.id)
+                    for j in i.level_two_category_list:
+                        all_ids.append(j.id)
+                        for k in j.level_three_category_list:
+                            all_ids.append(k.id)
+                            for l in  k.level_four_category_list:
+                                all_ids.append(l.id)
+                                for m in  l.level_five_category_list:
+                                    all_ids.append(m.id)
+        elif  level_name == "level-2":
+            level_one_category_obj = DatabaseModel.get_document(level_one_category.objects,{'id':category_id})
+            if level_one_category_obj:
+                all_ids.append(level_one_category_obj.id)
+                for j in level_one_category_obj.level_two_category_list:
+                    all_ids.append(j.id)
+                    for k in j.level_three_category_list:
+                        all_ids.append(k.id)
+                        for l in  k.level_four_category_list:
+                            all_ids.append(l.id)
+                            for m in  l.level_five_category_list:
+                                all_ids.append(m.id)
+        elif  level_name == "level-3":
+            level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'id':category_id})
+            if level_two_category_obj:
+                all_ids.append(level_two_category_obj.id)
+                for k in level_two_category_obj.level_three_category_list:
+                    all_ids.append(k.id)
+                    for l in  k.level_four_category_list:
+                        all_ids.append(l.id)
+                        for m in  l.level_five_category_list:
+                            all_ids.append(m.id)
+        elif  level_name == "level-4":
+            level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'id':category_id})
+            if level_three_category_obj:
+                all_ids.append(level_three_category_obj.id)
+                for l in  level_three_category_obj.level_four_category_list:
+                    all_ids.append(l.id)
+                    for m in  l.level_five_category_list:
+                        all_ids.append(m.id)
+        elif  level_name == "level-5":
+            level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'id':category_id})
+            if level_four_category_obj:
+                all_ids.append(level_four_category_obj.id)
+                for m in  level_four_category_obj.level_five_category_list:
+                    all_ids.append(m.id)
         all_ids = [str(i) for i in all_ids]
-        category_obj = {"category_id": {'$in': all_ids}}
+        category_obj = {"category_id":{'$in':all_ids}}
     else:
         category_obj = {}
     pipeline = [
@@ -739,7 +764,7 @@ def productBulkUpdate(request):
     for i in product_obj_list:
         DatabaseModel.update_documents(products.objects,{'id':i['id']},i['update_obj'])
     data = dict()
-    data['is_updated'] = True
+    data['is_updated'] = True  
     return data
 
 
@@ -760,13 +785,7 @@ def productUpdate(request):
 def varientUpdate(request):
     json_req = JSONParser().parse(request)
     varient_obj = json_req
-    v_list = list()
-    for i in varient_obj['options']:
-        product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{"option_name_id":i['option_name_id'],"option_value_id":i['option_value_id']})
-        v_list.append(product_varient_option_obj.id)
-    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":varient_obj["finishedPrice"],"un_finished_price":varient_obj["unfinishedPrice"],"quantity":varient_obj["quantity"],"retail_price":varient_obj["retail_price"],'varient_option_id':v_list})
-    # 
-    #     DatabaseModel.update_documents(product_varient.objects,{"id":varient_obj['id']},{"add_to_set__varient_option_id":product_varient_option_obj.id})
+    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":varient_obj["finishedPrice"],"un_finished_price":varient_obj["unfinishedPrice"],"quantity":varient_obj["quantity"],"retail_price":varient_obj["retailPrice"]})
     data = dict()
     data['is_updated'] = True
     return data
