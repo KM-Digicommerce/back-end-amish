@@ -1,6 +1,6 @@
-from mongoengine import Document , fields,EmbeddedDocument
+from mongoengine import Document , fields,EmbeddedDocument # type: ignore
 from datetime import datetime
-from bson import ObjectId
+from bson import ObjectId # type: ignore
 import random
 import string
 
@@ -38,9 +38,15 @@ class user(Document):
 class brand_count(Document):
     client_id = fields.ReferenceField(client)
     brand_count_int = fields.IntField()
+
 class brand(Document):
     brand_number = fields.StringField()
     name = fields.StringField()
+    email = fields.StringField()
+    mobile_number = fields.StringField()
+    address = fields.StringField()
+    website  = fields.StringField()
+    number_of_feeds  = fields.StringField()
     logo = fields.StringField()
     client_id = fields.ReferenceField(client)
     
@@ -234,6 +240,12 @@ class product_varient(Document):
     total_price = fields.StringField()
     retail_price = fields.StringField(default="0")
 
+class dimensions(EmbeddedDocument):
+    height = fields.StringField()
+    width = fields.StringField()
+    depth = fields.StringField()
+    length = fields.StringField()
+
 class products(Document):
     model = fields.StringField()
     mpn = fields.StringField()
@@ -247,6 +259,10 @@ class products(Document):
     attributes = fields.StringField()
     tags = fields.StringField()
     msrp = fields.StringField()
+    dimensions = fields.EmbeddedDocumentField(dimensions)
+    features_notes = fields.StringField()
+    option_str = fields.StringField()
+    units = fields.StringField()
     is_active = fields.BooleanField()
     base_price = fields.StringField()
     discount_price = fields.StringField(default = "0")

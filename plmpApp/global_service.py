@@ -1,7 +1,7 @@
-import redis
+import redis # type: ignore
 import pickle
-from django.db import models
-from mongoengine.queryset import QuerySet  
+from django.db import models # type: ignore
+from mongoengine.queryset import QuerySet   # type: ignore
 
 
 class DatabaseModel:

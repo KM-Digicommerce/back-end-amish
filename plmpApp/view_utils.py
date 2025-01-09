@@ -63,7 +63,7 @@ def getCategoryLevelOrder(i):
         
         i['category_number'] = level_five_category_obj.category_number
         level_four_category_obj = DatabaseModel.get_document(level_four_category.objects,{'level_five_category_list__in':[i['category_id']]})
-        i['category_name'] =  level_three_category_obj.name  + " > " + i['category_name']
+        i['category_name'] =  level_four_category_obj.name  + " > " + i['category_name']
         level_three_category_obj = DatabaseModel.get_document(level_three_category.objects,{'level_four_category_list__in':[level_four_category_obj.id]})
         i['category_name'] = level_three_category_obj.name  + " > " + i['category_name']
         level_two_category_obj = DatabaseModel.get_document(level_two_category.objects,{'level_three_category_list__in':[level_three_category_obj.id]})

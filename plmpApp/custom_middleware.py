@@ -1,11 +1,11 @@
-from rest_framework.response import Response
-from django.http import JsonResponse
+from rest_framework.response import Response # type: ignore
+from django.http import JsonResponse # type: ignore
 from .global_service import DatabaseModel
 from .models import ignore_calls,capability,user
 from plmp_backend.env import SIMPLE_JWT
-import jwt
-from rest_framework import status
-from rest_framework.renderers import JSONRenderer
+import jwt # type: ignore
+from rest_framework import status # type: ignore
+from rest_framework.renderers import JSONRenderer # type: ignore
 
 
 def check_ignore_authentication_for_url(request):
