@@ -779,10 +779,15 @@ def obtainProductDetails(request):
         del result['_id']
         result['product_obj']['product_id'] = str(result['product_obj']['product_id'])
         result['product_obj']['brand_id'] = str(result['product_obj']['brand_id'])
-        result['product_obj']['height'] = result['product_obj']['dimensions']['height']
-        result['product_obj']['width'] = result['product_obj']['dimensions']['width']
-        result['product_obj']['depth'] = result['product_obj']['dimensions']['depth']
-        result['product_obj']['length'] = result['product_obj']['dimensions']['length']
+        result['product_obj']['height'] = ""
+        result['product_obj']['width'] = ""
+        result['product_obj']['depth'] = ""
+        result['product_obj']['length'] = ""
+        if 'dimensions' in result['product_obj']:
+            result['product_obj']['height'] = result['product_obj']['dimensions']['height']
+            result['product_obj']['width'] = result['product_obj']['dimensions']['width']
+            result['product_obj']['depth'] = result['product_obj']['dimensions']['depth']
+            result['product_obj']['length'] = result['product_obj']['dimensions']['length']
         # result['product_obj']['ImageURL'] = result['product_obj']['ImageURL'][0] if len(result['product_obj']['ImageURL']) >0 else ""
         product_category_config_obj = DatabaseModel.get_document(product_category_config.objects,{"product_id":result['product_obj']['product_id']})
         result['category_id'] = product_category_config_obj.category_id
