@@ -224,32 +224,32 @@ def createProduct(request):
     depth = ""
     length = ""
     if product_obj['height']:
-        if product_obj['unit'] == "in":
+        if product_obj['units'] == "in":
             height = str(product_obj['height']) +'"'+'H'
-        elif product_obj['unit'] == "ft":
+        elif product_obj['units'] == "ft":
             height = str(product_obj['height']) +"'"+'H'
-        elif product_obj['unit'] == "mm":
+        elif product_obj['units'] == "mm":
             height = str(product_obj['height']) +"mm"+'H'
     if product_obj['width']:
-        if product_obj['unit'] == "in":
+        if product_obj['units'] == "in":
             width = str( product_obj['width']) +'"'+'W'
-        elif product_obj['unit'] == "ft":
+        elif product_obj['units'] == "ft":
             width = str( product_obj['width']) +"'"+'W'
-        elif product_obj['unit'] == "mm":
+        elif product_obj['units'] == "mm":
             width = str( product_obj['width']) +"mm"+'W'
     if product_obj['depth']:
-        if product_obj['unit'] == "in":
+        if product_obj['units'] == "in":
             depth = product_obj['depth'] +'"'+'D'
-        elif product_obj['unit'] == "ft":
+        elif product_obj['units'] == "ft":
             depth = product_obj['depth'] +"'"+'D'
-        elif product_obj['unit'] == "mm":
+        elif product_obj['units'] == "mm":
             depth = str( product_obj['depth']) +"mm"+'D'
     if product_obj['length']:
-        if product_obj['unit'] == "in":
+        if product_obj['units'] == "in":
             length = product_obj['length'] +'"'+'L'
-        elif product_obj['unit'] == "ft":
+        elif product_obj['units'] == "ft":
             length = product_obj['length'] +"'"+'L'
-        elif product_obj['unit'] == "mm":
+        elif product_obj['units'] == "mm":
             length = str( product_obj['length']) +"mm"+'L'
     product_obj_save = {
         "model" :product_obj['model'],
@@ -265,7 +265,7 @@ def createProduct(request):
         "tags":product_obj['tags'],
         "features_notes":product_obj['features_notes'],
         "option_str":product_obj['option_str'],
-        'units':product_obj['unit'],
+        'units':product_obj['units'],
         # "msrp":str(product_obj['msrp']),
         # "base_price":str(product_obj['base_price']),
         "key_features":product_obj['key_features']
@@ -1909,7 +1909,6 @@ def obtainBrand(request):
             '$match':{'client_id':ObjectId(client_id)}
         }
 
-    print("................",match)
     pipeline = [
         match,
     {
