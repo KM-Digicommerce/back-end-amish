@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'plmpApp',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

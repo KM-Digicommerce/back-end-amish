@@ -933,7 +933,9 @@ def obtainAllVarientList(request):
             'varient_option_list': {
                 "$push": {
                     'type_name': "$type_name.name",
+                    'type_id': "$type_name._id",
                     'type_value': "$type_value.name",
+                    'type_value_id': "$type_value._id",
                 }
             }
         }
@@ -955,6 +957,11 @@ def obtainAllVarientList(request):
     result = list(products.objects.aggregate(*pipeline))
     for i in result:
         i['id'] = str(i['id'])
+        for j in i['varient_option_list']:
+            if 'type_id' in j  :
+                j['type_id'] = str(j['type_id'])
+            if  'type_value_id' in j:
+                j['type_value_id'] = str(j['type_value_id'])
     return  result
 
 
@@ -3373,7 +3380,10 @@ def updatevarientToReleatedCategories(request):
                     is_present = True
 
             if is_present == False:
-                category_varient_obj.varient_option_id_list.append(ObjectId(varient_option_id))
+                option_name_id = DatabaseModel.get_document(varient_option.objects,{'id':varient_option_id}).option_name_id.id
+                option_name_id
+                varient_option_obj = DatabaseModel.save_documents(varient_option,{'option_name_id':option_name_id,'option_value_id_list':type_value_list})
+                category_varient_obj.varient_option_id_list.append(ObjectId(varient_option_obj.id))
                 category_varient_obj.save()
         else:
             category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':i,'varient_option_id_list':[varient_option_id],'category_level':category_level})
@@ -3388,3 +3398,7 @@ def updateTaxonomyForProduct(request):
     DatabaseModel.update_documents(product_category_config.objects,{'product_id':json_req['product_id']},{'category_id':json_req['category_id'],'category_level':json_req['category_level']})
     return data
     
+    data = False
+    if d:
+        data = True
+        
