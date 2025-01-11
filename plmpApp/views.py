@@ -555,6 +555,8 @@ def obtainCategoryAndSections(request):
 
 @csrf_exempt
 def obtainAllProductList(request):
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
+
     client_id = get_current_client()
     category_id = request.GET.get("category_id")
     brand_id = request.GET.get("brand_id")
@@ -630,6 +632,10 @@ def obtainAllProductList(request):
         category_obj = {"category_id":{'$in':all_ids}}
     else:
         category_obj = {}
+    user_obj = DatabaseModel.get_document(user.objects,{'id':user_login_id})
+    active_obj = {}
+    if user_obj.role == 'client-admin':
+        active_obj = {'products.is_active':True} 
     pipeline = [
     {
             "$match":category_obj
@@ -642,6 +648,9 @@ def obtainAllProductList(request):
             'as': 'products'
         }
     }, 
+    {
+            "$match":active_obj
+        },
     {
             '$unwind': {
                 'path': '$products',
@@ -848,9 +857,11 @@ def varientUpdate(request):
     varient_obj = json_req
     product_varient_option_list = list()
     for i in varient_obj["options"]: 
-        product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{'option_name_id':ObjectId(i['option_name_id']),'option_value_id':ObjectId(i['option_value_id'])})
+        product_varient_option_obj = DatabaseModel.get_document(product_varient_option.objects,{'option_name_id':ObjectId(i['option_name_id']),'option_value_id':ObjectId(i['option_value_id'])})
+        if product_varient_option_obj==None:
+            product_varient_option_obj = DatabaseModel.save_documents(product_varient_option,{'option_name_id':ObjectId(i['option_name_id']),'option_value_id':ObjectId(i['option_value_id'])})
         product_varient_option_list.append(product_varient_option_obj.id)
-    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":varient_obj["finishedPrice"],"un_finished_price":varient_obj["unfinishedPrice"],"quantity":varient_obj["quantity"],"retail_price":str(varient_obj["retailPrice"]),"varient_option_id":product_varient_option_list})
+    DatabaseModel.update_documents(product_varient.objects,{'id':varient_obj['id']},{'sku_number':varient_obj["sku"],"finished_price":str(varient_obj["finishedPrice"]),"un_finished_price":str(varient_obj["unfinishedPrice"]),"quantity":str(varient_obj["quantity"]),"retail_price":str(varient_obj["retailPrice"]),"varient_option_id":product_varient_option_list})
     data = dict()
     data['is_updated'] = True
     return data
@@ -2642,7 +2653,7 @@ def obtainRetailBrandPrice(request):
 def createUser(request):
     client_id = get_current_client()
     json_req = JSONParser().parse(request)
-    DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':'admin','password':json_req['password']})
+    DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':'client-user','password':json_req['password']})
     data = dict()
     data['is_created'] = True
     return data
@@ -3398,7 +3409,70 @@ def updateTaxonomyForProduct(request):
     DatabaseModel.update_documents(product_category_config.objects,{'product_id':json_req['product_id']},{'category_id':json_req['category_id'],'category_level':json_req['category_level']})
     return data
     
-    data = False
-    if d:
-        data = True
-        
+
+@csrf_exempt
+def cloneProduct(request):
+    json_req = JSONParser().parse(request)
+    product_id = json_req['id']
+    client_id = get_current_client()
+    product_obj = DatabaseModel.get_document(products.objects, {'id': product_id,'client_id':client_id})
+    print(product_obj.client_id.id,client_id)
+    product_category_config_obj = DatabaseModel.get_document(product_category_config.objects, {'product_id': product_id})
+    count = DatabaseModel.count_documents(products.objects, {'product_name__startswith':product_obj.product_name,"client_id":client_id,'mpn':product_obj.mpn})
+    print(count)
+    count = count - 1
+    for i in product_obj.options:
+        for j in i.varient_option_id:
+            j.pk = None
+            j.save()
+        i.pk = None
+        i.sku_number = f"{i.sku_number} (Copy)"
+        i.save()
+    product_obj.pk = None
+    if count <1:
+        product_obj.product_name = f"{product_obj.product_name} (Copy)"
+    else:
+        product_obj.product_name = f"{product_obj.product_name} (Copy {count})"  
+    product_category_config_obj.pk = None
+    product_obj.save()
+    product_category_config_obj.product_id = product_obj.id
+    product_category_config_obj.save()
+    print(f"Cloned product created with new ID: {product_obj.id}")
+    data = dict()
+    data['is_created'] = True
+    return data
+
+@csrf_exempt
+def cloneVarient(request):
+    json_req = JSONParser().parse(request)
+    product_id = json_req['id']
+    variant_id = json_req['variant_id']
+    client_id = get_current_client()
+    product_obj = DatabaseModel.get_document(products.objects, {'id': product_id,'client_id':client_id})
+    option_list = []
+    for i in product_obj.options:
+        option_list.append(i.id)
+        if str(i.id) == variant_id:
+            print(">>>>>>>>>>>>>>>>>.")
+            for j in i.varient_option_id:
+                j.pk = None
+                j.save()
+            i.pk = None
+            i.sku_number = f"{i.sku_number} (Copy)"
+            i.save()
+            option_list.append(i.id)
+    print(option_list)
+    product_obj.options=(option_list)
+    product_obj.save()
+    data = dict()
+    data['is_created'] = True
+    return data
+
+@csrf_exempt
+def brandUpdate(request):
+    json_req = JSONParser().parse(request)
+    brand_id = json_req['update_obj']['id']
+    DatabaseModel.update_documents(brand.objects,{'id':brand_id},json_req['update_obj'])
+    data = dict()
+    data['is_updated'] = True
+    return data
