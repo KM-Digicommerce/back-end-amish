@@ -3392,11 +3392,12 @@ def updatevarientToReleatedCategories(request):
 
             if is_present == False:
                 option_name_id = DatabaseModel.get_document(varient_option.objects,{'id':varient_option_id}).option_name_id.id
-                option_name_id
                 varient_option_obj = DatabaseModel.save_documents(varient_option,{'option_name_id':option_name_id,'option_value_id_list':type_value_list})
                 category_varient_obj.varient_option_id_list.append(ObjectId(varient_option_obj.id))
                 category_varient_obj.save()
         else:
+            option_name_id = DatabaseModel.get_document(varient_option.objects,{'id':varient_option_id}).option_name_id.id
+            varient_option_id = DatabaseModel.save_documents(varient_option,{'option_name_id':option_name_id,'option_value_id_list':type_value_list}).id
             category_varient_obj = DatabaseModel.save_documents(category_varient,{'category_id':i,'varient_option_id_list':[varient_option_id],'category_level':category_level})
     data = dict()
     data['is_updated']  = True
