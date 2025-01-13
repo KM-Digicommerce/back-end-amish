@@ -235,7 +235,7 @@ class product_varient(Document):
     finished_price = fields.StringField()
     un_finished_price = fields.StringField()
     quantity = fields.StringField()
-    is_active = fields.BooleanField()
+    is_active = fields.BooleanField(default = True)
     
     total_price = fields.StringField()
     retail_price = fields.StringField(default="0")
@@ -263,7 +263,7 @@ class products(Document):
     features_notes = fields.StringField()
     option_str = fields.StringField()
     units = fields.StringField()
-    is_active = fields.BooleanField()
+    is_active = fields.BooleanField(default = True)
     base_price = fields.StringField()
     discount_price = fields.StringField(default = "0")
     dealer_price = fields.StringField(default = "0")

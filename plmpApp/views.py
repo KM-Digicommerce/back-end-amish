@@ -559,6 +559,8 @@ def obtainAllProductList(request):
 
     client_id = get_current_client()
     category_id = request.GET.get("category_id")
+    varient_option_name = request.GET.get("variant_option_name_id")
+    varient_option_value = request.GET.get("variant_option_value_id")
     brand_id = request.GET.get("brand_id")
     filter = request.GET.get("filter")
     search_term = request.GET.get('search')
@@ -572,6 +574,18 @@ def obtainAllProductList(request):
     brand_obj = {}
     if brand_id != None:
         brand_obj = {"brand._id":ObjectId(brand_id)}
+    if varient_option_name:
+        product_varient_option_obj = {'product_varient_option_ins.option_name_id':ObjectId(varient_option_name)}
+    if varient_option_value:
+        product_varient_option_obj = {
+  "$and": [
+    {"product_varient_option_ins.option_name_id": ObjectId(varient_option_name)},
+    {"product_varient_option_ins.option_value_id": ObjectId(varient_option_value)}
+  ]
+}
+
+    else:
+        product_varient_option_obj = {}
     category_obj = {}
     if category_id != None and level_name == None:
         category_obj = {"category_id":category_id}
@@ -654,12 +668,42 @@ def obtainAllProductList(request):
     {
             '$unwind': {
                 'path': '$products',
-                'preserveNullAndEmptyArrays': True
+                # 'preserveNullAndEmptyArrays': True
             }
         },
     {
         "$match":{'products.client_id':ObjectId(client_id)}
     },
+     {
+            '$lookup': {
+                "from": 'product_varient',
+                "localField": 'products.options',
+                "foreignField": "_id",
+                "as": "product_varient_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, 
+        {
+            '$lookup': {
+                "from": 'product_varient_option',
+                "localField": 'product_varient_ins.varient_option_id',
+                "foreignField": "_id",
+                "as": "product_varient_option_ins"
+            }
+        },
+        {
+            '$unwind': {
+                'path': '$product_varient_option_ins',
+                'preserveNullAndEmptyArrays': True
+            }
+        } ,{
+            "$match": product_varient_option_obj
+        },
     {
         '$lookup': {
             'from': 'brand',
@@ -841,6 +885,56 @@ def productUpdate(request):
     del json_req['update_obj']['depth']
     length = json_req['update_obj']['length']
     del json_req['update_obj']['length']
+    length = length.replace("'", '"')
+    if height:
+        height = re.findall(r'\d+', height)
+        if height:
+            height = height[0]
+        else:
+            height = ""
+        if json_req['update_obj']['units'] == "in":
+            height = str(height) +'"'+'H'
+        elif json_req['update_obj']['units'] == "ft":
+            height = str(height) +"'"+'H'
+        elif json_req['update_obj']['units'] == "mm":
+            height = str(height) +"mm"+'H'
+    if width:
+        width = re.findall(r'\d+', width)
+        if width:
+            width = width[0]
+        else:
+            width = ""
+        if json_req['update_obj']['units'] == "in":
+            width = str( width) +'"'+'W'
+        elif json_req['update_obj']['units'] == "ft":
+            width = str( width) +"'"+'W'
+        elif json_req['update_obj']['units'] == "mm":
+            width = str( width) +"mm"+'W'
+    if depth:
+        depth = re.findall(r'\d+', depth)
+        if depth:
+            depth = depth[0]
+        else:
+            depth = ""
+        if json_req['update_obj']['units'] == "in":
+            depth = depth +'"'+'D'
+        elif json_req['update_obj']['units'] == "ft":
+            depth = depth +"'"+'D'
+        elif json_req['update_obj']['units'] == "mm":
+            depth = str( depth) +"mm"+'D'
+    if length:
+        length = re.findall(r'\d+', length)
+        if length:
+            length = length[0]
+        else:
+            length = ""
+        if json_req['update_obj']['units'] == "in":
+            length = length +'"'+'L'
+        elif json_req['update_obj']['units'] == "ft":
+            length = length +"'"+'L'
+        elif json_req['update_obj']['units'] == "mm":
+            length = str( length) +"mm"+'L'
+
     DatabaseModel.update_documents(products.objects,{'id':product_id},json_req['update_obj'])
     products_obj = DatabaseModel.get_document(products.objects,{'id':product_id})
     products_obj.dimensions = (dimensions(height=height, width=width,depth =depth,length =length))
@@ -963,6 +1057,8 @@ def obtainAllVarientList(request):
             "image_url": 1,
             'varient_option_list':1
             }
+        },{
+            '$sort':{'id':-1}
         }
     ]
     result = list(products.objects.aggregate(*pipeline))
@@ -1082,6 +1178,7 @@ def exportAll(request):
                 # "msrp":{ "$first":"$msrp"},
                 "retail_price":{ "$first":"$product_varient_ins.retail_price"},
                 "Tags":{ "$first":"$tags"}, 
+                "dimensions":{ "$first":"$dimensions"}, 
                 "Variant SKU":{ "$first":"$product_varient_ins.sku_number"},
                 "Un Finished Price":{ "$first":"$product_varient_ins.un_finished_price"},
                 "Finished Price":{ "$first":"$product_varient_ins.finished_price"},
@@ -1106,6 +1203,7 @@ def exportAll(request):
                 "product_id":1,
                 "retail_price":1,
                 "Tags":1, 
+                "dimensions":1, 
                 "Variant SKU":1,
                 "Un Finished Price":1,
                 "Finished Price":1,
@@ -1138,7 +1236,7 @@ def exportAll(request):
     # "S.No","mpn", "Variant SKU","Product Name","Model", "UPC/EAN","taxonomy","Brand", "Short Description","Long Description",
     # "Retail Price", "Unfinished Price", "Finished Price"
     # ]
-    headers = ["S.No","MPN","Handle","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Published"]
+    headers = ["S.No","MPN","Handle","Variant SKU","Title","Body (HTML)","Vendor","Product Category","Type","Tags","Dimensions (product.metafields.custom.dimensions1)","Published"]
     variant_headers = []
     for i in range(1, max_variants + 1):
         variant_headers.append(f"Option{i} Name")
@@ -1153,6 +1251,10 @@ def exportAll(request):
         i_dict = dict()
         i_dict['level'] = item.get("category level", "")
         i_dict['category_id'] = item.get("category_id", "")
+        try:
+            dimensions = item.get("dimensions", "")['height'] +"x"+item.get("dimensions", "")['width']+"x"+item.get("dimensions", "")['depth']+"x"+ item.get("dimensions", "")['length']
+        except:
+            dimensions = ""
         getCategoryLevelOrder(i_dict)
         row = [
             i + 1,
@@ -1165,7 +1267,8 @@ def exportAll(request):
             item.get("category_last_name", ""),
             i_dict.get("category_name", ""),
             item.get("Tags", ""),
-            item.get(""), #Published
+            dimensions,
+            item.get(""),
         ]
         variant_options = item.get("varient_option_list", [])
         for j in range(max_variants):
@@ -1314,6 +1417,8 @@ def obtainVarientForCategory(request):
             'category_varient_id':1,
             'type_id':1
         }
+        },{
+            '$sort':{'type_id':1}
         }
         ]
     result = list(category_varient.objects.aggregate(*pipeline))
@@ -1335,8 +1440,11 @@ def obtainVarientForCategory(request):
                 getCategoryLevelOrder(dist_i)
                 i ['tagged_category_list'].append(dist_i['category_name'])
             i['varient_option_id'] =  str(i['varient_option_id'])
-            for j in i['option_value_list']:
-                j['type_value_id'] = str(j['type_value_id']) if 'type_value_id'in j else ""
+            try:
+                for j in i['option_value_list']:
+                    j['type_value_id'] = str(j['type_value_id']) 
+            except:
+                i['option_value_list'] = []
     data['varient_list'] = result
     return data
 
@@ -1980,7 +2088,11 @@ def obtainBrand(request):
 
     for i in brand_list:
         i['id'] = str (i['_id'])
-        i['product_count'] = DatabaseModel.count_documents(products.objects,{'brand_id':i['id']})
+        products_list = DatabaseModel.list_documents(products.objects,{'brand_id':i['id']})
+        i['product_count'] = len(products_list)
+        i['sku_count'] = 0
+        for j in products_list:
+            i['sku_count'] += len(j.options)
         del i['_id']
         if i['logo']:
             i['logo'] = base_url + i['logo'].lstrip('/')
@@ -2265,7 +2377,7 @@ def obtainPriceLog(request):
         "old_retail_price" : i.old_retail_price,
         "new_retail_price" : i.new_retail_price,
         "user_id" : i.user_id.name,
-        "log_date" : i.log_date   
+        "log_date" : convert_to_timezone(i.log_date, 'US/Eastern').strftime('%Y-%m-%d %H:%M:%S')
         })
     return data
 # import requests
@@ -2653,7 +2765,12 @@ def obtainRetailBrandPrice(request):
 def createUser(request):
     client_id = get_current_client()
     json_req = JSONParser().parse(request)
-    DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':'client-user','password':json_req['password']})
+    user_obj = DatabaseModel.get_document(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name']})
+    if user_obj:
+        data = dict()
+        data['is_created'] = False
+        return data
+    DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':json_req['role'],'password':json_req['password']})
     data = dict()
     data['is_created'] = True
     return data
@@ -3385,11 +3502,12 @@ def updatevarientToReleatedCategories(request):
         is_present = False
         if category_varient_obj:
             for i in category_varient_obj.varient_option_id_list:
+                print(str(i.option_name_id.id) == type_name)
                 if str(i.option_name_id.id) == type_name:
                     i.option_value_id_list.extend(type_value_list)
                     i.save()
                     is_present = True
-
+                    break
             if is_present == False:
                 option_name_id = DatabaseModel.get_document(varient_option.objects,{'id':varient_option_id}).option_name_id.id
                 varient_option_obj = DatabaseModel.save_documents(varient_option,{'option_name_id':option_name_id,'option_value_id_list':type_value_list})
@@ -3417,10 +3535,10 @@ def cloneProduct(request):
     product_id = json_req['id']
     client_id = get_current_client()
     product_obj = DatabaseModel.get_document(products.objects, {'id': product_id,'client_id':client_id})
-    print(product_obj.client_id.id,client_id)
     product_category_config_obj = DatabaseModel.get_document(product_category_config.objects, {'product_id': product_id})
     count = DatabaseModel.count_documents(products.objects, {'product_name__startswith':product_obj.product_name,"client_id":client_id,'mpn':product_obj.mpn})
     print(count)
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     count = count - 1
     for i in product_obj.options:
         for j in i.varient_option_id:
@@ -3429,6 +3547,7 @@ def cloneProduct(request):
         i.pk = None
         i.sku_number = f"{i.sku_number} (Copy)"
         i.save()
+        logForCreateProductVarient(i.id,user_login_id,"clone")
     product_obj.pk = None
     if count <1:
         product_obj.product_name = f"{product_obj.product_name} (Copy)"
@@ -3440,6 +3559,8 @@ def cloneProduct(request):
     product_category_config_obj.save()
     print(f"Cloned product created with new ID: {product_obj.id}")
     data = dict()
+    logForCreateProduct(product_id,user_login_id,"clone")
+
     data['is_created'] = True
     return data
 
@@ -3447,6 +3568,7 @@ def cloneProduct(request):
 def cloneVarient(request):
     json_req = JSONParser().parse(request)
     product_id = json_req['id']
+    user_login_id = request.META.get('HTTP_USER_LOGIN_ID')
     variant_id = json_req['variant_id']
     client_id = get_current_client()
     product_obj = DatabaseModel.get_document(products.objects, {'id': product_id,'client_id':client_id})
@@ -3454,7 +3576,6 @@ def cloneVarient(request):
     for i in product_obj.options:
         option_list.append(i.id)
         if str(i.id) == variant_id:
-            print(">>>>>>>>>>>>>>>>>.")
             for j in i.varient_option_id:
                 j.pk = None
                 j.save()
@@ -3462,6 +3583,8 @@ def cloneVarient(request):
             i.sku_number = f"{i.sku_number} (Copy)"
             i.save()
             option_list.append(i.id)
+            logForCreateProductVarient(i.id,user_login_id,"clone")
+
     print(option_list)
     product_obj.options=(option_list)
     product_obj.save()
@@ -3476,4 +3599,111 @@ def brandUpdate(request):
     DatabaseModel.update_documents(brand.objects,{'id':brand_id},json_req['update_obj'])
     data = dict()
     data['is_updated'] = True
+    return data
+
+
+def obtainVarientOptions(request):
+    category_id = request.GET.get("id")
+    client_id = get_current_client()
+    if category_id:
+        category_id = {'category_id':category_id}
+    else:
+        category_id = {}
+    pipeline = [
+        {
+            "$match":category_id
+        },
+        {
+        '$lookup': {
+            'from': 'varient_option',
+            'localField': 'varient_option_id_list',
+            'foreignField': '_id',
+            'as': 'varient_option'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$varient_option',
+                'preserveNullAndEmptyArrays': True
+            }
+        }, {
+            "$match":{'varient_option.client_id':ObjectId(client_id)}
+        },
+        {
+        '$lookup': {
+            'from': 'type_name',
+            'localField': 'varient_option.option_name_id',
+            'foreignField': '_id',
+            'as': 'type_name'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_name',
+                'preserveNullAndEmptyArrays': True
+            }
+        },    {
+        '$lookup': {
+            'from': 'type_value',
+            'localField': 'varient_option.option_value_id_list',
+            'foreignField': '_id',
+            'as': 'type_value'
+        }
+        }, 
+        {
+            '$unwind': {
+                'path': '$type_value',
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+        '$group': {
+            "_id":"$varient_option",
+            "type_name":{'$first':"$type_name.name"},
+            "varient_option_id":{'$first':"$varient_option._id"},
+            "type_id":{'$first':"$type_name._id"},
+            "category_varient_id":{'$first':"$_id"},
+            'option_value_list': {
+                "$addToSet": {
+                    'type_value_name': "$type_value.name",
+                    'type_value_id': "$type_value._id",
+                }
+            }
+        }
+        },{
+        '$project':{
+            "_id":0,
+            "type_name":1,
+            'option_value_list': 1,
+            'varient_option_id':1,
+            'category_varient_id':1,
+            'type_id':1
+        }
+        }
+        ]
+    result = list(category_varient.objects.aggregate(*pipeline))
+    
+    data = dict()
+    data['category_varient_id'] = ""
+    if len(result)>0:
+        for i in result:
+            i['type_id'] = str(i['type_id']) if 'type_id'in i else ""
+            data['category_varient_id'] = str(i['category_varient_id'])
+            del i['category_varient_id']
+            # i ['tagged_category_list'] = list()
+            # category_varient_list = DatabaseModel.list_documents(category_varient.objects,{'varient_option_id_list__in':[ i['varient_option_id']]})
+            # for ins in category_varient_list:
+            #     dist_i = dict()
+            #     dist_i['level'] = ins.category_level
+            #     dist_i['category_id'] = ins.category_id
+            #     dist_i['category_name'] = ""
+            #     getCategoryLevelOrder(dist_i)
+            #     i ['tagged_category_list'].append(dist_i['category_name'])
+            i['varient_option_id'] =  str(i['varient_option_id'])
+            try:
+                for j in i['option_value_list']:
+                    j['type_value_id'] = str(j['type_value_id']) 
+            except:
+                i['option_value_list'] = []
+    data['varient_list'] = result
     return data
