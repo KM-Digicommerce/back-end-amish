@@ -213,7 +213,7 @@ def createProduct(request):
     product_obj = json_req.get("product_obj")
     category_id = product_obj["category_id"]
     category_name = product_obj["category_name"]
-    products_obj = DatabaseModel.get_document(products.objects,{'model':product_obj['model'],'mpn':product_obj['mpn'],'client_id':client_id})
+    products_obj = DatabaseModel.get_document(products.objects,{'mpn':product_obj['mpn'],'client_id':client_id})
     if products_obj:
         data = dict()
         data['status'] = False
@@ -266,6 +266,7 @@ def createProduct(request):
         "features_notes":product_obj['features_notes'],
         "option_str":product_obj['option_str'],
         'units':product_obj['units'],
+        'image':product_obj['image'],
         # "msrp":str(product_obj['msrp']),
         # "base_price":str(product_obj['base_price']),
         "key_features":product_obj['key_features']
@@ -278,9 +279,17 @@ def createProduct(request):
     cat_retail_price = 1
     if brand_category_price_obj:
         cat_retail_price = brand_category_price_obj.price
+    product_varient_list_check = []
     for z in product_obj['varients']:
         retail_price = str(z['retail_price']) 
+        
+        if z['sku_number'] in product_varient_list_check:
+            data = dict()
+            data['status'] = False
+            data['error'] = "Varient Already Created"
+            return data
         product_varient_obj = DatabaseModel.save_documents(product_varient,{"sku_number":z['sku_number'],"finished_price":str(z['finished_price']),"un_finished_price":str(z['un_finished_price']),"quantity":z['quantity'],'retail_price':retail_price})
+        product_varient_list_check .append(z['sku_number'])
         createradial_price_log(product_varient_obj.id,"0",retail_price,user_login_id,client_id)
         logForCreateProductVarient(product_varient_obj.id,user_login_id,"create")
         for i in z['options']:
@@ -3596,6 +3605,8 @@ def cloneVarient(request):
 def brandUpdate(request):
     json_req = JSONParser().parse(request)
     brand_id = json_req['update_obj']['id']
+    del json_req['update_obj']['product_count']
+    del json_req['update_obj']['sku_count']
     DatabaseModel.update_documents(brand.objects,{'id':brand_id},json_req['update_obj'])
     data = dict()
     data['is_updated'] = True
@@ -3707,3 +3718,5 @@ def obtainVarientOptions(request):
                 i['option_value_list'] = []
     data['varient_list'] = result
     return data
+
+
