@@ -2841,9 +2841,13 @@ def obtainVarientOptionValueForRetailPrice(request):
     client_id = get_current_client()
     data['varient_option_value_list'] = []
     varient_option_obj = DatabaseModel.get_document(varient_option.objects,{'option_name_id':option_name_id,'client_id':client_id})
+    unique_ids = set()
+
     if varient_option_obj:
         for i in varient_option_obj.option_value_id_list:
-            data['varient_option_value_list'].append({'id':str(i.id),"name":i.name})
+            option_id = str(i.id)
+            if option_id not in unique_ids:
+                data['varient_option_value_list'].append({'id':str(i.id),"name":i.name})
     return data
 
 
