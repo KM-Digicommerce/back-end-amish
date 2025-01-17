@@ -2848,6 +2848,8 @@ def obtainVarientOptionValueForRetailPrice(request):
             option_id = str(i.id)
             if option_id not in unique_ids:
                 data['varient_option_value_list'].append({'id':str(i.id),"name":i.name})
+                unique_ids.add(option_id)
+
     return data
 
 
