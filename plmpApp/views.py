@@ -3368,15 +3368,15 @@ def obtainInActiveProducts(request):
             'foreignField': '_id',
             'as': 'products'
         }
-    },  {
-        "$match":{'products.is_active':False}
-    },
+    }, 
     {
             '$unwind': {
                 'path': '$products',
-                'preserveNullAndEmptyArrays': True
+                # 'preserveNullAndEmptyArrays': True
             }
-        },
+        }, {
+        "$match":{'products.is_active':False}
+    },
     {
         "$match":{'products.client_id':ObjectId(client_id)}
     },
