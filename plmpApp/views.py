@@ -1085,11 +1085,34 @@ def obtainAllVarientList(request):
 def exportAll(request):
     category_id = request.GET.get('category_id')
     client_id = get_current_client()
+    is_active_product = request.GET.get('is_active_product')
+    is_active_variant = request.GET.get('is_active_variant')
+    if is_active_product == 'true':
+        print("?????????1????/")
+        is_active_product = {'is_active': True}
+    else:
+        print(":>2???")
+
+        is_active_product = {}
+    if is_active_variant == 'true':
+        print(":>3???")
+
+        is_active_variant = {'product_varient_ins.is_active': True}
+    else:
+        print(":>4???")
+
+        is_active_variant = {}
     if category_id:
+        print(":>?5??")
         category_obj = {'product_category_config_ins.category_id':category_id,"client_id":ObjectId(client_id)}
     else:
+        print(":>6???")
+
         category_obj = {"client_id":ObjectId(client_id)}
     pipeline = [
+        {
+            '$match':is_active_product
+        },
         {
             '$lookup': {
                 "from": 'product_varient',
@@ -1099,6 +1122,9 @@ def exportAll(request):
             }
         },
         {'$unwind': {'path': '$product_varient_ins', 'preserveNullAndEmptyArrays': True}},
+          {
+            '$match':is_active_variant
+        },
         {
             '$lookup': {
                 "from": 'product_category_config',
@@ -1301,7 +1327,7 @@ def exportAll(request):
         row.append(img_src_str)
         row.extend(["","","","","","","","","","","","","","","","","","","","",item.get("Key Features", ""),"","","","","","","","","","","","","","","","","",""])
         f_p = item.get("Finished Price",0.0)
-        if f_p:
+        if f_p != 'None' or f_p != None or f_p != "":
             f_p = str(round(float(f_p),2))
         row.append(f_p)
         row.extend(["","","",""])
@@ -2769,6 +2795,7 @@ def obtainRetailBrandPrice(request):
         data['price'] = 1
         data['price_option'] = "finished_price"
     return data
+from django.core.mail import send_mail
 
 @csrf_exempt
 def createUser(request):
@@ -2779,8 +2806,15 @@ def createUser(request):
         data = dict()
         data['is_created'] = False
         return data
-    DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':json_req['role'],'password':json_req['password']})
+    user_obj = DatabaseModel.save_documents(user,{'client_id':ObjectId(client_id),'user_name':json_req['user_name'],'name':json_req['name'],'email':json_req['email'],'role':json_req['role'],'password':json_req['password']})
     data = dict()
+    send_mail(
+        'Your account has been created successfully',
+        f"Your password {user_obj['password']}",
+        settings.EMAIL_HOST_USER,
+        [json_req['email']],
+        fail_silently=False,
+    )
     data['is_created'] = True
     return data
 
@@ -2790,10 +2824,13 @@ def obtainVarientOptionForRetailPrice(request):
     data = dict()
     data['varient_option_list'] = []
     client_id = get_current_client()
-    
-    varient_option_list = DatabaseModel.list_documents(varient_option.objects,{'client_id':ObjectId(client_id)})
+    varient_option_list = DatabaseModel.list_documents(varient_option.objects, {'client_id': ObjectId(client_id)})
+    unique_ids = set()
     for i in varient_option_list:
-        data['varient_option_list'].append({'id':str(i.option_name_id.id),"name":i.option_name_id.name})
+        option_id = str(i.option_name_id.id)
+        if option_id not in unique_ids:
+            unique_ids.add(option_id)
+            data['varient_option_list'].append({'id': option_id, "name": i.option_name_id.name})
     return data
 
 
