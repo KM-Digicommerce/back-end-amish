@@ -16,6 +16,7 @@ def check_ignore_authentication_for_url(request):
     #     return False 
     print(path)
     result_obj = DatabaseModel.get_document(ignore_calls.objects, {"name__in": path})
+    print(">>>>>>>>>>>>>>",result_obj)
     return result_obj is not None  
 
 def skip_for_paths():
