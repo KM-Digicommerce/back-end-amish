@@ -52,8 +52,9 @@ from pytz import timezone # type: ignore
 from django.utils.timezone import is_naive, make_aware # type: ignore
 from .custom_middleware import get_current_user,get_current_client
 def v1(request):
+    u_o = DatabaseModel.get_document(user.objects).name
     print(get_random_secret_key())
-    return JsonResponse({"PLMP_API":"v2"},safe=False)
+    return JsonResponse({"PLMP_API":u_o},safe=False)
 def create_user(request):
     json_request = json.loads(request.body)
     categories_data = json_request.get('categories')
