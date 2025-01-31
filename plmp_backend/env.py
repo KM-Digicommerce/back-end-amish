@@ -5,7 +5,7 @@ password = quote_plus("admin@1234")
 
 # Create the connection URI
 # MONGODB_HOST_1 = f"mongodb://{username}:{password}@localhost:27017"
-MONGODB_HOST_1 =  "mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/"
+MONGODB_HOST_1 =  "mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net"
 
 
 front_end_ip = "http://192.168.31.139:3000"
