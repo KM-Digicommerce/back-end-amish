@@ -28,8 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 import os
 
-MONGODB_HOST_1 = os.getenv('MONGODB_HOST_1', 'default_connection_string')
-from .env import MONGODB_COURSE_DB_NAME,front_end_ip
+from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 from mongoengine import connect
 connect(
     db=MONGODB_COURSE_DB_NAME,
