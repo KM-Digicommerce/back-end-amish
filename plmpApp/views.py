@@ -51,9 +51,13 @@ from django.core.management.utils import get_random_secret_key # type: ignore
 from pytz import timezone # type: ignore
 from django.utils.timezone import is_naive, make_aware # type: ignore
 from .custom_middleware import get_current_user,get_current_client
+from mongoengine.connection import get_db
 def v1(request):
     u_o = DatabaseModel.get_document(user.objects).name
     print(get_random_secret_key())
+    db = get_db()  # Fetch the active MongoDB connection
+    db_name = db.name  # Get the database name
+    print(db_name)
     return JsonResponse({"PLMP_API":u_o},safe=False)
 def create_user(request):
     json_request = json.loads(request.body)
