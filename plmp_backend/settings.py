@@ -26,8 +26,10 @@ SECRET_KEY = 'django-insecure-)1p(h4i8wd0jham0iwr2o0c_^z8sj&2f+w&7gzj8jf&ug3j1&k
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+import os
 
-from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
+MONGODB_HOST_1 = os.getenv('MONGODB_HOST_1', 'default_connection_string')
+from .env import MONGODB_COURSE_DB_NAME,front_end_ip
 from mongoengine import connect
 connect(
     db=MONGODB_COURSE_DB_NAME,
