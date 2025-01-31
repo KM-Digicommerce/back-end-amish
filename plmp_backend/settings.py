@@ -30,9 +30,15 @@ import os
 
 from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 from mongoengine import connect
+# connect(
+#     db=MONGODB_COURSE_DB_NAME,
+#     host=MONGODB_HOST_1
+# )
 connect(
-    db=MONGODB_COURSE_DB_NAME,
-    host=MONGODB_HOST_1
+    db='PLMP',
+    username='selva',
+    password='selva777',
+    host='mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/PLMP?retryWrites=true&w=majority'
 )
 
 ALLOWED_HOSTS = ["*"]
