@@ -1,4 +1,4 @@
-#!/home/ubuntu/back-end-amish/venv/bin/python3
+#!/home/lexicon/AA-Project/back-end-amish/venv/bin/python3
 """Extract pdf structure in XML format"""
 import logging
 import os.path
