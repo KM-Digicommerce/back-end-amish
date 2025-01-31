@@ -47,10 +47,6 @@ MONGODB_DATABASES = {
     },
 }
 
-# Ensure Django does not try to use a non-existent authentication backend
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Use Django default authentication
-]
 
 
 ALLOWED_HOSTS = ["*"]
