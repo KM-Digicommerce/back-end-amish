@@ -39,8 +39,12 @@ connect(
 
 
 
-ALLOWED_HOSTS = ["*"]
-
+# ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "back-end-amish-dev.onrender.com", 
+    "localhost",
+    "127.0.0.1"
+]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
