@@ -6,7 +6,7 @@ password = quote_plus("admin@1234")
 # Create the connection URI
 # MONGODB_HOST_1 = f"mongodb://{username}:{password}@localhost:27017"
 # MONGODB_HOST_1 =  "mongodb://plmp_admin:admin%401234@52.201.29.59:27017"
-MONGODB_HOST_1 =  "mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/"
+MONGODB_HOST_1 =  "mongodb+srv://siva:1@cluster0.uryxh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 front_end_ip = "http://192.168.31.139:3000"
 from datetime import timedelta
