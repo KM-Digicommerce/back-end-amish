@@ -38,7 +38,7 @@ connect(
     db='PLMP',
     username='selva',
     password='selva777',
-    host='mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/PLMP?retryWrites=true&w=majority'
+    host='mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/'
 )
 
 ALLOWED_HOSTS = ["*"]
