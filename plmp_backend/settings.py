@@ -31,21 +31,10 @@ import os
 from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 
 from mongoengine import connect
-
-# Connect to MongoDB Atlas (No port needed)
 connect(
     db=MONGODB_COURSE_DB_NAME,
     host=MONGODB_HOST_1
 )
-
-# Django MongoDB Configuration
-MONGODB_DATABASES = {
-    'default': {
-        'name': MONGODB_COURSE_DB_NAME,  # Your MongoDB database name
-        'host': MONGODB_HOST_1,    
-        'port': 27017
-    },
-}
 
 
 
