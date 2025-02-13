@@ -29,7 +29,7 @@ from .models import revert_varient_retail_price
 from plmp_backend.env import MONGODB_COURSE_DB_NAME
 from django.http import HttpResponse # type: ignore
 from openpyxl import Workbook # type: ignore
-import pandas as pd # type: ignore # type: ignore
+import pandas as pd # type: ignore # type: ignoreC
 from io import BytesIO
 from rest_framework.parsers import JSONParser # type: ignore
 import json
@@ -1321,7 +1321,8 @@ def exportAll(request):
                 row.append('')  # Add empty values for missing variants
                 row.append('')  # Add empty values for missing variants
         retail_price = item.get("retail_price",0.0)
-        retail_price = str(round(float(retail_price),2))
+        if retail_price != 'None' and retail_price != None and retail_price != "":
+            retail_price = str(round(float(retail_price),2))
         row.extend(["","","","","",retail_price,"","","",""])
         img_src = item.get("Image Src", [])
         if img_src == "" or img_src ==None:
@@ -1332,7 +1333,8 @@ def exportAll(request):
         row.append(img_src_str)
         row.extend(["","","","","","","","","","","","","","","","","","","","",item.get("Key Features", ""),"","","","","","","","","","","","","","","","","",""])
         f_p = item.get("Finished Price",0.0)
-        if f_p != 'None' or f_p != None or f_p != "":
+        print(f_p)
+        if f_p != 'None' and f_p != None and f_p != "":
             f_p = str(round(float(f_p),2))
         row.append(f_p)
         row.extend(["","","",""])
