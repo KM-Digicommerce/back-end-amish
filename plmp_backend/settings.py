@@ -33,20 +33,17 @@ from .env import MONGODB_COURSE_DB_NAME,MONGODB_HOST_1,front_end_ip
 
 from mongoengine import connect
 connect(
-    db='PLMP',
-    username='selva',
-    password='selva777',
-    host='mongodb+srv://selva:selva777@cluster0.ekbeh.mongodb.net/',
-    port=27017
+    db=MONGODB_COURSE_DB_NAME,
+    host=MONGODB_HOST_1
 )
 
 
-# ALLOWED_HOSTS = ["*"]
-ALLOWED_HOSTS = [
-    "back-end-amish-dev.onrender.com", 
-    "localhost",
-    "127.0.0.1"
-]
+ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = [
+#     "back-end-amish-dev.onrender.com", 
+#     "localhost",
+#     "127.0.0.1"
+# ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
